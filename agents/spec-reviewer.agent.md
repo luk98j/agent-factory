@@ -25,7 +25,8 @@ does.
 
 | Skill | Used for |
 |---|---|
-| `spec-checklist` | the project's specification checklist |
+| `spec-checklist` | the specification checklist |
+| `karpathy-guidelines` | spotting hidden assumptions, unrequested scope and goals that cannot be verified |
 
 ## What you check
 

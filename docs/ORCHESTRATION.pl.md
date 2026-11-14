@@ -174,15 +174,13 @@ checklisty wpisanej w swój plik i zgłasza brak w polu `SKILLS_MISSING`. Dzięk
 temu agenci są generyczni, a wiedza o projekcie (stack, konwencje) mieszka w
 skillach.
 
-**Skille projektowe (do napisania we własnym projekcie):**
+**Skille ogólne (w tym repozytorium, w `skills/`, instalowane razem z agentami):**
 
 | Skill | Używa |
 |---|---|
 | `task-classification`, `findings-merge`, `retrospective`, `factory` | orchestrator |
 | `ac-format` | analyst |
 | `spec-checklist` | spec-reviewer |
-| `architecture-patterns` | architect |
-| `stack-and-style` | architect, developer, tester, recenzenci, docs-writer |
 | `test-strategy` | tester |
 | `security-checklist` | developer, review-security |
 | `performance-checklist` | review-performance |
@@ -190,19 +188,25 @@ skillach.
 | `brief-format` | brief-writer |
 | `platform-rules` | copywriter |
 | `docs-template` | docs-writer |
-| `design-system` | designer |
 | `commit-conventions`, `pr-template` | publisher |
 
-**Skille zewnętrzne:**
+**Skille projektowe (w repozytorium konkretnego projektu):** `stack-and-style`
+(architect, developer, tester, recenzenci, docs-writer), `architecture-patterns`
+(architect) i `design-system` (designer). Opisują jeden projekt, więc nie należą
+do tego repozytorium. Skill projektowy o tej samej nazwie co ogólny ma w tym
+projekcie pierwszeństwo.
+
+**Skille zewnętrzne (instalowane jako pluginy, nie są tu kopiowane):**
 
 | Źródło | Skille | Używa |
 |---|---|---|
-| multica-ai/andrej-karpathy-skills | `karpathy-guidelines` | orchestrator |
+| multica-ai/andrej-karpathy-skills | `karpathy-guidelines` | orchestrator, analyst, spec-reviewer, architect, developer |
 | obra/superpowers | `brainstorming` | analyst, brief-writer |
 | | `writing-plans` | architect |
-| | `test-driven-development`, `systematic-debugging` | developer |
+| | `test-driven-development`, `systematic-debugging` | developer, tester |
+| | `receiving-code-review` | developer |
 | | `verification-before-completion` | developer, tester |
-| | `dispatching-parallel-agents` | orchestrator |
+| | `subagent-driven-development`, `dispatching-parallel-agents`, `requesting-code-review` | orchestrator |
 | | `finishing-a-development-branch` | publisher |
 | anthropics/skills | `frontend-design`, `web-artifacts-builder`, `canvas-design`, `theme-factory`, `brand-guidelines` | designer |
 | | `brand-guidelines` | brief-writer, copywriter |
@@ -214,10 +218,11 @@ skillach.
 
 ## 7. Co z którego rozwiązania
 
-**Zasady Karpathy'ego (orchestrator).** Cztery reguły przeniesione na poziom
+**Zasady Karpathy'ego.** Orchestrator stosuje cztery reguły na poziomie
 delegowania: pomyśl przed delegowaniem (jawne założenia, jedno pytanie zamiast
 cichego wyboru), najkrótszy pipeline, zakres chirurgiczny w każdym briefie, cel
-weryfikowalny zamiast polecenia.
+weryfikowalny zamiast polecenia. Agenci, którzy analizują i decydują (analyst,
+spec-reviewer, architect), oraz developer ładują ten sam skill do własnej pracy.
 
 **Superpowers.** Kontrakt z sekcji 4, test-first u developera, dowód przed
 werdyktem u testera, plan w małych zadaniach u architekta.
@@ -261,14 +266,15 @@ narzędzia, tokeny i koszt.
 
 ## 8. Instalacja i synchronizacja
 
-Instalacja agentów dla wszystkich projektów:
+Instalacja agentów i skilli dla wszystkich projektów:
 
 ```bash
 scripts/install.sh
 ```
 
-Skrypt kopiuje `agents/*.agent.md` do `~/.claude/agents/` i
-`~/.copilot/agents/` i niczego innego tam nie rusza. `--dry-run` pokazuje, co
+Skrypt kopiuje `agents/*.agent.md` i każdy folder `skills/<nazwa>/` do
+`~/.claude/` i `~/.copilot/` (do ich folderów `agents/` i `skills/`) i niczego
+innego tam nie rusza. `--dry-run` pokazuje, co
 by się zmieniło.
 
 Przeniesienie zmian z folderu użytkownika z powrotem do repozytorium:
@@ -277,8 +283,10 @@ Przeniesienie zmian z folderu użytkownika z powrotem do repozytorium:
 scripts/sync-back.sh
 ```
 
-Skrypt porównuje folder użytkownika z `agents/`, tworzy gałąź
-`sync/agents-<znacznik-czasu>` i commituje zmienionych agentów. `--push`
+Skrypt porównuje folder użytkownika z `agents/` i `skills/`, tworzy gałąź
+`sync/<znacznik-czasu>` i commituje to, co się zmieniło. `--add NAZWA` i
+`--add-skill NAZWA` dodają agenta lub skill, którego repozytorium jeszcze nie
+śledzi. `--push`
 dodatkowo wypycha gałąź i otwiera pull request. Przed commitem skanuje
 zmienione pliki pod kątem ścieżek domowych, adresów e-mail i formatów kluczy;
 jeśli coś znajdzie, zatrzymuje się. Uruchamiaj go z aktualnej gałęzi domyślnej.

@@ -25,7 +25,8 @@ you do not decide how it is built or how it looks.
 
 | Skill | Used for |
 |---|---|
-| `ac-format` | the project's acceptance-criteria format |
+| `ac-format` | the acceptance-criteria format |
+| `karpathy-guidelines` | stating assumptions, surfacing ambiguity, turning a request into verifiable goals |
 | `brainstorming` | drawing out intent when the request is vague |
 
 ## How you work

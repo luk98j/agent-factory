@@ -193,15 +193,13 @@ installed, the agent uses the default checklist written in its own file and
 reports the gap in `SKILLS_MISSING`. This keeps the agents generic: knowledge
 about a project (stack, conventions) lives in skills.
 
-**Project skills (yours to write):**
+**General skills (in this repository, under `skills/`, installed with the agents):**
 
 | Skill | Used by |
 |---|---|
 | `task-classification`, `findings-merge`, `retrospective`, `factory` | orchestrator |
 | `ac-format` | analyst |
 | `spec-checklist` | spec-reviewer |
-| `architecture-patterns` | architect |
-| `stack-and-style` | architect, developer, tester, reviewers, docs-writer |
 | `test-strategy` | tester |
 | `security-checklist` | developer, review-security |
 | `performance-checklist` | review-performance |
@@ -209,19 +207,25 @@ about a project (stack, conventions) lives in skills.
 | `brief-format` | brief-writer |
 | `platform-rules` | copywriter |
 | `docs-template` | docs-writer |
-| `design-system` | designer |
 | `commit-conventions`, `pr-template` | publisher |
 
-**External skills:**
+**Project skills (kept in each project's own repository):** `stack-and-style`
+(architect, developer, tester, reviewers, docs-writer), `architecture-patterns`
+(architect) and `design-system` (designer). They describe one project, so they
+do not belong here. A project skill with the same name as a general one takes
+precedence in that project.
+
+**External skills (installed as plugins, not copied here):**
 
 | Source | Skills | Used by |
 |---|---|---|
-| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | `karpathy-guidelines` | orchestrator |
+| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | `karpathy-guidelines` | orchestrator, analyst, spec-reviewer, architect, developer |
 | [obra/superpowers](https://github.com/obra/superpowers) | `brainstorming` | analyst, brief-writer |
 | | `writing-plans` | architect |
-| | `test-driven-development`, `systematic-debugging` | developer |
+| | `test-driven-development`, `systematic-debugging` | developer, tester |
+| | `receiving-code-review` | developer |
 | | `verification-before-completion` | developer, tester |
-| | `dispatching-parallel-agents` | orchestrator |
+| | `subagent-driven-development`, `dispatching-parallel-agents`, `requesting-code-review` | orchestrator |
 | | `finishing-a-development-branch` | publisher |
 | [anthropics/skills](https://github.com/anthropics/skills) | `frontend-design`, `web-artifacts-builder`, `canvas-design`, `theme-factory`, `brand-guidelines` | designer |
 | | `brand-guidelines` | brief-writer, copywriter |
@@ -233,10 +237,12 @@ about a project (stack, conventions) lives in skills.
 
 ## 7. What comes from where
 
-**Karpathy guidelines (orchestrator).** The four rules, moved to the level of
+**Karpathy guidelines.** The orchestrator applies the four rules at the level of
 delegation: think before delegating (state assumptions, ask one question
 instead of choosing silently), the shortest pipeline, surgical scope in every
-brief, a verifiable goal instead of an instruction.
+brief, a verifiable goal instead of an instruction. The agents that analyze and decide
+(analyst, spec-reviewer, architect) and the developer load the same skill for
+their own work.
 
 **Superpowers.** The contract in section 4, test-first for the developer,
 evidence before a verdict for the tester, a plan in small tasks for the
@@ -282,14 +288,15 @@ tree, tools, tokens and cost.
 
 ## 8. Installation and keeping in sync
 
-Install the agents for every project:
+Install the agents and skills for every project:
 
 ```bash
 scripts/install.sh
 ```
 
-It copies `agents/*.agent.md` to `~/.claude/agents/` and `~/.copilot/agents/`
-and touches nothing else there. `--dry-run` shows what would change.
+It copies `agents/*.agent.md` and every `skills/<name>/` folder to `~/.claude/`
+and `~/.copilot/` (into their `agents/` and `skills/` folders) and touches
+nothing else there. `--dry-run` shows what would change.
 
 Bring changes made in the user folder back into the repository:
 
@@ -297,8 +304,10 @@ Bring changes made in the user folder back into the repository:
 scripts/sync-back.sh
 ```
 
-It compares the user folder with `agents/`, creates the branch
-`sync/agents-<timestamp>`, and commits the agents that changed. `--push` also
+It compares the user folder with `agents/` and `skills/`, creates the branch
+`sync/<timestamp>`, and commits what changed. `--add NAME` and
+`--add-skill NAME` bring in an agent or a skill the repository does not track
+yet. `--push` also
 pushes and opens a pull request. Before committing it scans the changed files
 for home paths, e-mail addresses and credential formats, and stops if it finds
 any. Run it from an up-to-date default branch.

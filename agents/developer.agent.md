@@ -30,8 +30,10 @@ tester or the reviewers comes back to you.
 |---|---|
 | `stack-and-style` | the project's stack, versions and code conventions |
 | `ponytail` | the smallest complete change |
+| `karpathy-guidelines` | simplicity first, surgical changes, looping until the goal is verified |
 | `test-driven-development` | red, green, refactor |
 | `systematic-debugging` | finding the root cause of a failure |
+| `receiving-code-review` | acting on tester and reviewer findings in a fix attempt |
 | `security-checklist` | self-check before handing over |
 | `verification-before-completion` | proving the work is done |
 
