@@ -1,0 +1,10 @@
+.DS_Store
+
+# Run state and run records are produced in the projects where the agents
+# work. They can contain project details, so they never belong in this
+# repository.
+runs/
+memory/
+
+# Local tool settings
+.claude/settings.local.json

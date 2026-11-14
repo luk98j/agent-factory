@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent chain</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --panel: #ffffff; --ink: #1c1b19; --muted: #6b6860; --line: #d9d6cd;
+    --dev: #2f5fd0; --content: #b4541a; --docs: #1d7a5a; --design: #8a3fb8;
+    --gate: #b3261e; --orch: #1c1b19; --orch-ink: #ffffff; --chip: #efede6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a09d94; --line: #3a3935;
+      --dev: #86a8ff; --content: #f0a068; --docs: #6fd0aa; --design: #cf9af0;
+      --gate: #ff8a80; --orch: #ecebe6; --orch-ink: #151514; --chip: #2a2a27;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 16px 56px; }
+  header { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 32px 0 10px; }
+  p.lead { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
+  .lang { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; flex: none; }
+  .lang button { font: inherit; font-size: 13px; border: 0; background: var(--panel); color: var(--muted); padding: 5px 11px; cursor: pointer; }
+  .lang button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .orch { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .lane { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--c);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .lane-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .lane-name { font-weight: 700; color: var(--c); }
+  .lane-when { color: var(--muted); font-size: 13px; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .arrow { color: var(--muted); }
+  .par { display: flex; flex-direction: column; gap: 5px; padding: 6px; border: 1px dashed var(--line); border-radius: 9px; }
+  .par-label { font-size: 11px; color: var(--muted); text-align: center; }
+
+  button.node { font: inherit; color: var(--ink); background: var(--bg); border: 1.5px solid var(--c, var(--line));
+    border-radius: 8px; padding: 6px 11px; cursor: pointer; text-align: left; }
+  button.node:hover, button.node:focus-visible { outline: 2px solid var(--c, var(--ink)); outline-offset: 1px; }
+  button.node[aria-pressed="true"] { background: var(--c, var(--ink)); color: var(--bg); }
+  button.node.orchestrator { --c: var(--orch); background: var(--orch); color: var(--orch-ink); font-weight: 700; padding: 9px 16px; }
+  button.node.gate { --c: var(--gate); border-style: double; border-width: 3px; font-weight: 600; }
+  .end { color: var(--muted); font-size: 13px; }
+  .loops { margin: 10px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+  .loops li { background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; }
+
+  aside { position: sticky; top: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  aside h3 { margin: 0 0 2px; font-size: 18px; }
+  aside .role { color: var(--muted); margin: 0 0 12px; }
+  aside dt { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 12px; }
+  aside dd { margin: 4px 0 0; }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tags span { background: var(--chip); border-radius: 6px; padding: 1px 7px; font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .card h3 { margin: 0 0 6px; font-size: 15px; }
+  .card p { margin: 0; color: var(--muted); font-size: 13.5px; }
+  code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .tablewrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th { color: var(--muted); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1 data-i18n="title"></h1>
+      <p class="lead" data-i18n="lead"></p>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button data-lang="en">EN</button><button data-lang="pl">PL</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div>
+      <div class="orch">
+        <span class="end" data-i18n="task"></span><span class="arrow">→</span>
+        <button class="node orchestrator" data-agent="orchestrator">orchestrator</button>
+        <span class="arrow">→</span><span class="end" data-i18n="classifies"></span>
+      </div>
+
+      <section class="lane" style="--c: var(--dev)">
+        <div class="lane-head"><span class="lane-name">dev</span><span class="lane-when" data-i18n="whenDev"></span></div>
+        <div class="flow">
+          <button class="node" data-agent="analyst">analyst</button><span class="arrow">→</span>
+          <button class="node" data-agent="spec-reviewer">spec-reviewer</button><span class="arrow">→</span>
+          <button class="node" data-agent="architect">architect</button><span class="arrow">→</span>
+          <button class="node" data-agent="developer">developer</button><span class="arrow">→</span>
+          <button class="node" data-agent="tester">tester</button><span class="arrow">→</span>
+          <div class="par">
+            <span class="par-label" data-i18n="parallel"></span>
+            <button class="node" data-agent="review-security">review-security</button>
+            <button class="node" data-agent="review-performance">review-performance</button>
+            <button class="node" data-agent="review-style">review-style</button>
+          </div>
+          <span class="arrow">→</span><button class="node" data-agent="docs-writer">docs-writer · sync</button>
+          <span class="arrow">→</span><button class="node gate" data-agent="gate" data-i18n="gate"></button>
+        </div>
+        <ul class="loops">
+          <li>↩ spec-reviewer → analyst · <code>spec</code> ≤ 3</li>
+          <li>↩ tester → developer · <code>code</code> ≤ 3</li>
+          <li>↩ tester → analyst · <code>spec</code> ≤ 3</li>
+          <li data-i18n="loopBlocking"></li>
+          <li data-i18n="loopEnv"></li>
+        </ul>
+      </section>
+
+      <section class="lane" style="--c: var(--content)">
+        <div class="lane-head"><span class="lane-name">content</span><span class="lane-when" data-i18n="whenContent"></span></div>
+        <div class="flow">
+          <button class="node" data-agent="brief-writer">brief-writer</button><span class="arrow">→</span>
+          <button class="node" data-agent="copywriter">copywriter</button><span class="arrow">→</span>
+          <div class="par">
+            <span class="par-label" data-i18n="parallelPlatform"></span>
+            <button class="node" data-agent="copywriter">copywriter · adapt</button>
+          </div>
+          <span class="arrow">→</span><button class="node gate" data-agent="gate" data-i18n="gate"></button>
+        </div>
+        <ul class="loops"><li data-i18n="loopAuthor"></li></ul>
+      </section>
+
+      <section class="lane" style="--c: var(--docs)">
+        <div class="lane-head"><span class="lane-name">docs</span><span class="lane-when" data-i18n="whenDocs"></span></div>
+        <div class="flow">
+          <button class="node" data-agent="docs-writer">docs-writer</button><span class="arrow">→</span>
+          <button class="node" data-agent="architect" data-i18n="architectReview"></button><span class="arrow">→</span>
+          <button class="node gate" data-agent="gate" data-i18n="gate"></button>
+        </div>
+        <ul class="loops"><li>↩ architect → docs-writer · <code>revision</code> ≤ 3</li></ul>
+      </section>
+
+      <section class="lane" style="--c: var(--design)">
+        <div class="lane-head"><span class="lane-name">design</span><span class="lane-when" data-i18n="whenDesign"></span></div>
+        <div class="flow">
+          <button class="node" data-agent="analyst">analyst</button><span class="arrow">→</span>
+          <button class="node" data-agent="designer">designer</button><span class="arrow">→</span>
+          <button class="node gate" data-agent="gate" data-i18n="gate"></button>
+        </div>
+        <ul class="loops">
+          <li data-i18n="loopDesign"></li>
+          <li data-i18n="designToDev"></li>
+        </ul>
+      </section>
+
+      <div class="orch" style="margin-top:14px">
+        <button class="node gate" data-agent="gate" data-i18n="humanGate"></button>
+        <span class="arrow" data-i18n="accept"></span>
+        <button class="node" data-agent="publisher">publisher</button>
+        <span class="arrow">→</span><span class="end" data-i18n="published"></span>
+      </div>
+    </div>
+
+    <aside aria-live="polite">
+      <h3 id="d-name"></h3>
+      <p class="role" id="d-role"></p>
+      <dl>
+        <dt data-i18n="hPipeline"></dt><dd id="d-pipes"></dd>
+        <dt data-i18n="hTools"></dt><dd class="tags" id="d-tools"></dd>
+        <dt data-i18n="hSkills"></dt><dd class="tags" id="d-skills"></dd>
+        <dt data-i18n="hWrites"></dt><dd id="d-writes"></dd>
+      </dl>
+    </aside>
+  </div>
+
+  <h2 data-i18n="hShared"></h2>
+  <div class="cards">
+    <div class="card"><h3 data-i18n="cStateT"></h3><p data-i18n="cState"></p></div>
+    <div class="card"><h3 data-i18n="cMemT"></h3><p data-i18n="cMem"></p></div>
+    <div class="card"><h3 data-i18n="cDocsT"></h3><p data-i18n="cDocs"></p></div>
+    <div class="card"><h3 data-i18n="cMonT"></h3><p data-i18n="cMon"></p></div>
+    <div class="card"><h3 data-i18n="cRulesT"></h3><p data-i18n="cRules"></p></div>
+    <div class="card"><h3 data-i18n="cContractT"></h3><p data-i18n="cContract"></p></div>
+  </div>
+
+  <h2 data-i18n="hMatrix"></h2>
+  <div class="tablewrap"><table id="matrix">
+    <thead><tr><th data-i18n="hAgent"></th><th data-i18n="hTools"></th><th data-i18n="hWrites"></th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+</main>
+
+<script>
+const TEXT = {
+  en: {
+    title: "Agent chain",
+    lead: "One orchestrator, four pipelines, one human gate before anything is published. Click an agent to see its role, tools and skills.",
+    task: "Task", classifies: "classifies and picks a pipeline",
+    whenDev: "a code change", whenContent: "text for an audience", whenDocs: "describing what exists",
+    whenDesign: "\"design\", mockup, UI/UX, redesign, <code>/design</code>",
+    parallel: "in parallel", parallelPlatform: "in parallel, per platform",
+    gate: "gate", humanGate: "human gate", accept: "→ accept →", published: "branch, commit, pull request",
+    architectReview: "architect · review",
+    loopBlocking: "↩ blocking review → developer · <code>code</code> ≤ 3",
+    loopEnv: "↻ environment error · max 2 retries",
+    loopAuthor: "↩ gate → author · <code>revision</code> ≤ 3",
+    loopDesign: "↩ gate → designer or analyst · <code>revision</code> ≤ 3",
+    designToDev: "after acceptance: optionally a new dev run with the design as input",
+    hPipeline: "Pipeline", hTools: "Tools", hSkills: "Skills", hWrites: "Writes", hAgent: "Agent",
+    hShared: "Shared parts", hMatrix: "Who can do what", none: "none", gateName: "human gate",
+    cStateT: "State: state.json",
+    cState: "<code>runs/&lt;run-id&gt;/state.json</code> is the single source of truth. Only the orchestrator writes it; agents return their result in the final message.",
+    cMemT: "Memory",
+    cMem: "After every run the orchestrator writes what was learned to <code>memory/runs/&lt;run-id&gt;.md</code> and the index <code>memory/INDEX.md</code>, and reads matching records at the start. claude-mem adds search across sessions. Memory advises, state decides.",
+    cDocsT: "Docs move with the change",
+    cDocs: "Before the gate, docs-writer in sync mode updates the documents a code change makes outdated. They ship in the same pull request.",
+    cMonT: "Observation: Agent Monitor",
+    cMon: "Reads sessions through host hooks. Every dispatch is named <code>[run-id] agent #attempt</code>, so the run tree is readable. Supports Claude Code, not Copilot.",
+    cRulesT: "Working rules",
+    cRules: "Karpathy for the orchestrator: think before delegating, shortest pipeline, surgical scope, verifiable goal. Ponytail for developer, architect and designer: the smallest complete change.",
+    cContractT: "Contract (Superpowers)",
+    cContract: "Status DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED. A report is a claim; evidence counts. Only the orchestrator delegates."
+  },
+  pl: {
+    title: "Łańcuch agentów",
+    lead: "Jeden orchestrator, cztery pipeline'y, jedna bramka człowieka przed publikacją. Kliknij agenta, żeby zobaczyć jego rolę, narzędzia i skille.",
+    task: "Zadanie", classifies: "klasyfikuje i wybiera pipeline",
+    whenDev: "zmiana kodu", whenContent: "tekst dla odbiorców", whenDocs: "opis istniejącego",
+    whenDesign: "„design\", makieta, UI/UX, redesign, <code>/design</code>",
+    parallel: "równolegle", parallelPlatform: "równolegle, per platforma",
+    gate: "bramka", humanGate: "bramka człowieka", accept: "→ akceptuj →", published: "gałąź, commit, pull request",
+    architectReview: "architect · recenzja",
+    loopBlocking: "↩ przegląd blokujący → developer · <code>code</code> ≤ 3",
+    loopEnv: "↻ błąd środowiska · max 2 ponowienia",
+    loopAuthor: "↩ bramka → autor · <code>revision</code> ≤ 3",
+    loopDesign: "↩ bramka → designer lub analyst · <code>revision</code> ≤ 3",
+    designToDev: "po akceptacji: opcjonalnie nowy przebieg dev z designem na wejściu",
+    hPipeline: "Pipeline", hTools: "Narzędzia", hSkills: "Skille", hWrites: "Zapisuje", hAgent: "Agent",
+    hShared: "Elementy wspólne", hMatrix: "Kto co może", none: "brak", gateName: "bramka człowieka",
+    cStateT: "Stan: state.json",
+    cState: "<code>runs/&lt;run-id&gt;/state.json</code> to jedyne źródło prawdy. Zapisuje tylko orchestrator; agenci zwracają wynik w ostatniej wiadomości.",
+    cMemT: "Pamięć",
+    cMem: "Po każdym przebiegu orchestrator zapisuje wnioski do <code>memory/runs/&lt;run-id&gt;.md</code> i indeksu <code>memory/INDEX.md</code>, a na starcie czyta pasujące zapisy. claude-mem dodaje wyszukiwanie między sesjami. Pamięć doradza, stan rozstrzyga.",
+    cDocsT: "Dokumentacja idzie ze zmianą",
+    cDocs: "Przed bramką docs-writer w trybie sync aktualizuje dokumenty, które zmiana kodu czyni nieaktualnymi. Trafiają do tego samego pull requesta.",
+    cMonT: "Podgląd: Agent Monitor",
+    cMon: "Czyta sesje przez hooki hosta. Każde wywołanie ma nazwę <code>[run-id] agent #próba</code>, więc drzewo przebiegu jest czytelne. Obsługuje Claude Code, nie Copilota.",
+    cRulesT: "Zasady pracy",
+    cRules: "Karpathy u orchestratora: pomyśl przed delegowaniem, najkrótszy pipeline, zakres chirurgiczny, cel weryfikowalny. Ponytail u developera, architekta i designera: najmniejsza kompletna zmiana.",
+    cContractT: "Kontrakt (Superpowers)",
+    cContract: "Status DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED. Raport to twierdzenie; liczy się dowód. Tylko orchestrator deleguje."
+  }
+};
+
+const READ = ["Read", "Grep", "Glob", "Skill"];
+const ALL = { en: "all", pl: "wszystkie" };
+const NOTHING = { en: "nothing", pl: "nic" };
+
+const AGENTS = {
+  orchestrator: {
+    role: { en: "Classifies the task, plans the run, delegates stages, counts attempts, merges findings, keeps state and memory. Does no stage work itself.",
+            pl: "Klasyfikuje zadanie, planuje przebieg, deleguje etapy, liczy próby, scala ustalenia, prowadzi stan i pamięć. Nie wykonuje pracy etapów." },
+    pipes: ALL, tools: { en: ["all (inherited)"], pl: ["wszystkie (dziedziczone)"] },
+    writes: { en: "runs/ and memory/ only", pl: "tylko runs/ i memory/" },
+    skills: ["task-classification", "findings-merge", "retrospective", "factory", "karpathy-guidelines", "dispatching-parallel-agents", "mem-search"] },
+  analyst: {
+    role: { en: "Turns a request into requirements and testable acceptance criteria.",
+            pl: "Zamienia prośbę w wymagania i testowalne kryteria akceptacji." },
+    pipes: "dev, design", tools: READ, writes: NOTHING, skills: ["ac-format", "brainstorming"] },
+  "spec-reviewer": {
+    role: { en: "Approves the specification or returns it to the analyst with questions.",
+            pl: "Zatwierdza specyfikację albo zwraca ją analitykowi z pytaniami." },
+    pipes: "dev", tools: READ, writes: NOTHING, skills: ["spec-checklist"] },
+  architect: {
+    role: { en: "Technical design and a plan in small tasks (dev). Checks a document against the code (docs).",
+            pl: "Projekt techniczny i plan w małych zadaniach (dev). Recenzja zgodności dokumentu z kodem (docs)." },
+    pipes: "dev, docs", tools: READ, writes: NOTHING,
+    skills: ["architecture-patterns", "stack-and-style", "writing-plans", "ponytail"] },
+  developer: {
+    role: { en: "Implements the plan test-first with the smallest complete change. The only agent that edits product code.",
+            pl: "Implementuje plan test-first najmniejszą kompletną zmianą. Jedyny agent edytujący kod produktu." },
+    pipes: "dev", tools: ["Read", "Grep", "Glob", "Edit", "Write", "Bash", "Skill"],
+    writes: { en: "code in the working tree", pl: "kod w drzewie roboczym" },
+    skills: ["stack-and-style", "ponytail", "test-driven-development", "systematic-debugging", "security-checklist", "verification-before-completion"] },
+  tester: {
+    role: { en: "Checks every acceptance criterion with evidence and classifies failures: implementation, spec_unclear, environment.",
+            pl: "Sprawdza każde kryterium akceptacji z dowodem i klasyfikuje błędy: implementation, spec_unclear, environment." },
+    pipes: "dev", tools: ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "Skill"],
+    writes: { en: "test files only", pl: "tylko pliki testów" },
+    skills: ["test-strategy", "stack-and-style", "webapp-testing", "verification-before-completion"] },
+  "review-security": {
+    role: { en: "Independent security review of the diff. Findings are blocking or warning.",
+            pl: "Niezależny przegląd bezpieczeństwa diffu. Ustalenia blocking lub warning." },
+    pipes: "dev", tools: READ, writes: NOTHING, skills: ["security-checklist", "stack-and-style"] },
+  "review-performance": {
+    role: { en: "Independent performance review of the diff against real load.",
+            pl: "Niezależny przegląd wydajności diffu względem realnego obciążenia." },
+    pipes: "dev", tools: READ, writes: NOTHING, skills: ["performance-checklist", "stack-and-style"] },
+  "review-style": {
+    role: { en: "Project conventions, readability, simplicity and scope of the change.",
+            pl: "Konwencje projektu, czytelność, prostota i zakres zmiany." },
+    pipes: "dev", tools: READ, writes: NOTHING, skills: ["style-checklist", "stack-and-style", "ponytail-review"] },
+  designer: {
+    role: { en: "User flows, mockups, tokens, component specs and a handoff for the developer.",
+            pl: "Flow użytkownika, makiety, tokeny, specyfikacja komponentów i handoff dla developera." },
+    pipes: "design", tools: ["Read", "Grep", "Glob", "Edit", "Write", "Skill"],
+    writes: { en: "runs/<run-id>/design/ only", pl: "tylko runs/<run-id>/design/" },
+    skills: ["design-system", "brand-guidelines", "frontend-design", "web-artifacts-builder", "canvas-design", "theme-factory", "ponytail"] },
+  "brief-writer": {
+    role: { en: "The brief: goal, audience, message, platforms, criteria.",
+            pl: "Brief: cel, odbiorca, przekaz, platformy, kryteria." },
+    pipes: "content", tools: READ, writes: NOTHING, skills: ["brief-format", "brand-guidelines", "brainstorming"] },
+  copywriter: {
+    role: { en: "The master text from the brief, and an adaptation for one platform per dispatch.",
+            pl: "Tekst główny z briefu oraz adaptacja pod jedną platformę na wywołanie." },
+    pipes: "content", tools: READ, writes: NOTHING,
+    skills: ["platform-rules", "brand-guidelines", "internal-comms", "doc-coauthoring"] },
+  "docs-writer": {
+    role: { en: "Writes a new document (docs) and, in sync mode, updates documentation after a code change before the run reaches the gate (dev).",
+            pl: "Pisze nowy dokument (docs) i w trybie sync aktualizuje dokumentację po zmianie kodu, zanim przebieg trafi na bramkę (dev)." },
+    pipes: "docs, dev", tools: ["Read", "Grep", "Glob", "Edit", "Write", "Skill"],
+    writes: { en: "documentation files only", pl: "tylko pliki dokumentacji" },
+    skills: ["docs-template", "doc-coauthoring", "stack-and-style"] },
+  publisher: {
+    role: { en: "After a recorded human accept: branch, commit, pull request. Never to the default branch.",
+            pl: "Po zapisanej akceptacji człowieka: gałąź, commit, pull request. Nigdy na gałąź domyślną." },
+    pipes: ALL, tools: ["Read", "Grep", "Glob", "Bash", "Skill"],
+    writes: { en: "git: branch, commit, pull request", pl: "git: gałąź, commit, pull request" },
+    skills: ["commit-conventions", "pr-template", "finishing-a-development-branch"] },
+  gate: {
+    role: { en: "Not an agent. The orchestrator stops the run (waiting_human) and shows: summary, criteria status, tests, findings, diff. Decisions: accept, reject with a note, minor change.",
+            pl: "To nie agent. Orchestrator zatrzymuje przebieg (waiting_human) i pokazuje: podsumowanie, status AC, testy, ustalenia, diff. Decyzje: akceptuj, odrzuć z uwagą, drobna zmiana." },
+    pipes: ALL, tools: [],
+    writes: { en: "the orchestrator records the decision in decisions", pl: "decyzję do decisions zapisuje orchestrator" },
+    skills: [] }
+};
+
+let lang = "en";
+let selected = "orchestrator";
+const $ = (id) => document.getElementById(id);
+const pick = (value) => (value && !Array.isArray(value) && typeof value === "object" ? value[lang] : value);
+
+function tags(el, items) {
+  el.replaceChildren(...(items.length ? items : [TEXT[lang].none]).map((item) => {
+    const span = document.createElement("span");
+    span.textContent = item;
+    return span;
+  }));
+}
+
+function showAgent(name) {
+  selected = name;
+  const agent = AGENTS[name];
+  $("d-name").textContent = name === "gate" ? TEXT[lang].gateName : name;
+  $("d-role").textContent = pick(agent.role);
+  $("d-pipes").textContent = pick(agent.pipes);
+  tags($("d-tools"), pick(agent.tools));
+  tags($("d-skills"), agent.skills);
+  $("d-writes").textContent = pick(agent.writes);
+  document.querySelectorAll("button.node").forEach((button) =>
+    button.setAttribute("aria-pressed", String(button.dataset.agent === name)));
+}
+
+function renderMatrix() {
+  const rows = Object.entries(AGENTS).filter(([name]) => name !== "gate").map(([name, agent]) => {
+    const row = document.createElement("tr");
+    [name, pick(agent.tools).join(", "), pick(agent.writes)].forEach((value) => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.appendChild(cell);
+    });
+    return row;
+  });
+  document.querySelector("#matrix tbody").replaceChildren(...rows);
+}
+
+function setLanguage(next) {
+  lang = TEXT[next] ? next : "en";
+  document.documentElement.lang = lang;
+  document.title = TEXT[lang].title;
+  // TEXT holds only static strings defined in this file, so innerHTML is safe here.
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.innerHTML = TEXT[lang][el.dataset.i18n]; });
+  document.querySelectorAll(".lang button").forEach((button) =>
+    button.setAttribute("aria-pressed", String(button.dataset.lang === lang)));
+  renderMatrix();
+  showAgent(selected);
+  try { localStorage.setItem("agent-chain-lang", lang); } catch (error) { /* storage blocked: the choice just is not remembered */ }
+}
+
+document.querySelectorAll("button.node").forEach((button) =>
+  button.addEventListener("click", () => showAgent(button.dataset.agent)));
+document.querySelectorAll(".lang button").forEach((button) =>
+  button.addEventListener("click", () => setLanguage(button.dataset.lang)));
+
+let initial = new URLSearchParams(location.search).get("lang");
+if (!initial) {
+  try { initial = localStorage.getItem("agent-chain-lang"); } catch (error) { initial = null; }
+}
+setLanguage(initial || "en");
+</script>
+</body>
+</html>
