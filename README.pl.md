@@ -2,13 +2,15 @@
 
 [English](README.md) | Polski
 
-Zestaw 14 agentów działających jako jeden pipeline w **Claude Code** i
-**GitHub Copilot**. Jeden orchestrator planuje i deleguje, wyspecjalizowani
-agenci wykonują pracę, a nic nie jest publikowane bez akceptacji człowieka.
+Zestaw 14 agentów i 15 ogólnych skilli działających jako jeden pipeline w
+**Claude Code** i **GitHub Copilot**. Jeden orchestrator planuje i deleguje,
+wyspecjalizowani agenci wykonują pracę, a nic nie jest publikowane bez
+akceptacji człowieka.
 
 Każdy agent to jeden plik, który oba narzędzia ładują bez zmian. Agenci są
-generyczni: wiedza o projekcie (stack, konwencje, checklisty) pochodzi ze
-skilli.
+generyczni: checklisty, formaty i procedury pochodzą ze skilli w tym
+repozytorium, a wiedza o konkretnym projekcie (stack, architektura, design
+system) ze skilli trzymanych w tym projekcie.
 
 ## Łańcuch
 
@@ -44,12 +46,12 @@ Po wyczerpaniu licznika przebieg zatrzymuje się i czeka na człowieka.
 
 | Agent | Rola | Narzędzia | Zapisuje | Skille |
 |---|---|---|---|---|
-| `orchestrator` | klasyfikuje zadanie, deleguje etapy, liczy próby, prowadzi stan i pamięć | wszystkie (dziedziczone) | `runs/`, `memory/` | `task-classification`, `findings-merge`, `retrospective`, `factory`, `karpathy-guidelines`, `dispatching-parallel-agents`, `mem-search` |
-| `analyst` | wymagania i testowalne kryteria akceptacji | Read, Grep, Glob, Skill | nic | `ac-format`, `brainstorming` |
-| `spec-reviewer` | zatwierdza spec albo zwraca z pytaniami | Read, Grep, Glob, Skill | nic | `spec-checklist` |
-| `architect` | projekt techniczny i plan; recenzja dokumentacji względem kodu | Read, Grep, Glob, Skill | nic | `architecture-patterns`, `stack-and-style`, `writing-plans`, `ponytail` |
-| `developer` | implementuje plan test-first; jedyny agent edytujący kod produktu | Read, Grep, Glob, Edit, Write, Bash, Skill | kod | `stack-and-style`, `ponytail`, `test-driven-development`, `systematic-debugging`, `security-checklist`, `verification-before-completion` |
-| `tester` | sprawdza każde kryterium akceptacji z dowodem | Read, Grep, Glob, Bash, Edit, Write, Skill | pliki testów | `test-strategy`, `stack-and-style`, `webapp-testing`, `verification-before-completion` |
+| `orchestrator` | klasyfikuje zadanie, deleguje etapy, liczy próby, prowadzi stan i pamięć | wszystkie (dziedziczone) | `runs/`, `memory/` | `task-classification`, `findings-merge`, `retrospective`, `factory`, `karpathy-guidelines`, `subagent-driven-development`, `dispatching-parallel-agents`, `requesting-code-review`, `mem-search` |
+| `analyst` | wymagania i testowalne kryteria akceptacji | Read, Grep, Glob, Skill | nic | `ac-format`, `karpathy-guidelines`, `brainstorming` |
+| `spec-reviewer` | zatwierdza spec albo zwraca z pytaniami | Read, Grep, Glob, Skill | nic | `spec-checklist`, `karpathy-guidelines` |
+| `architect` | projekt techniczny i plan; recenzja dokumentacji względem kodu | Read, Grep, Glob, Skill | nic | `architecture-patterns`, `stack-and-style`, `karpathy-guidelines`, `writing-plans`, `ponytail` |
+| `developer` | implementuje plan test-first; jedyny agent edytujący kod produktu | Read, Grep, Glob, Edit, Write, Bash, Skill | kod | `stack-and-style`, `ponytail`, `karpathy-guidelines`, `test-driven-development`, `systematic-debugging`, `receiving-code-review`, `security-checklist`, `verification-before-completion` |
+| `tester` | sprawdza każde kryterium akceptacji z dowodem | Read, Grep, Glob, Bash, Edit, Write, Skill | pliki testów | `test-strategy`, `stack-and-style`, `test-driven-development`, `systematic-debugging`, `webapp-testing`, `verification-before-completion` |
 | `review-security` | niezależny przegląd bezpieczeństwa diffu | Read, Grep, Glob, Skill | nic | `security-checklist`, `stack-and-style` |
 | `review-performance` | niezależny przegląd wydajności diffu | Read, Grep, Glob, Skill | nic | `performance-checklist`, `stack-and-style` |
 | `review-style` | konwencje, czytelność, prostota, zakres | Read, Grep, Glob, Skill | nic | `style-checklist`, `stack-and-style`, `ponytail-review` |
@@ -61,6 +63,51 @@ Po wyczerpaniu licznika przebieg zatrzymuje się i czeka na człowieka.
 
 Brak skilla nigdy nie blokuje agenta: używa on domyślnej checklisty ze swojego
 pliku i zgłasza brak.
+
+## Skille
+
+**W tym repozytorium** (`skills/`, instalowane razem z agentami):
+
+| Skill | Co daje | Używa |
+|---|---|---|
+| `task-classification` | wybór dev, content, docs lub design; kiedy dzielić lub pytać | orchestrator |
+| `findings-merge` | jedna lista ustaleń bez duplikatów, blokujące osobno od ostrzeżeń | orchestrator |
+| `retrospective` | przegląd po przebiegu; kandydaci po trzech powtórzeniach | orchestrator |
+| `factory` | tworzenie agenta lub skilla w formacie uniwersalnym | orchestrator |
+| `ac-format` | kryteria akceptacji: jeden obserwowalny warunek, id, sposób weryfikacji | analyst |
+| `spec-checklist` | niejednoznaczność, testowalność, sprzeczności, zakres, przypadki brzegowe | spec-reviewer |
+| `test-strategy` | poziomy testów, mapowanie testów na kryteria, klasyfikacja błędów | tester |
+| `security-checklist` | wejście, kontrola dostępu, sekrety, ekspozycja danych, zależności | developer, review-security |
+| `performance-checklist` | dostęp do danych, koszt, oczekiwanie, pamięć, cache, współbieżność | review-performance |
+| `style-checklist` | zakres, prostota, konwencje, czytelność, testy, komentarze | review-style |
+| `brief-format` | szablon briefu | brief-writer |
+| `platform-rules` | adaptacja jednego tekstu pod różne platformy | copywriter |
+| `docs-template` | typy dokumentów, sekcje, utrzymanie dokumentacji zgodnej z kodem | docs-writer |
+| `commit-conventions` | komunikaty commitów i nazwy gałęzi | publisher |
+| `pr-template` | tytuł i opis pull requesta | publisher |
+
+**W repozytorium konkretnego projektu**, bo opisują ten projekt:
+`stack-and-style`, `architecture-patterns`, `design-system`. Skill projektowy
+o tej samej nazwie co ogólny ma w tym projekcie pierwszeństwo.
+
+**Zewnętrzne, instalowane jako pluginy** (nie są tu kopiowane):
+
+| Źródło | Skille | Używa |
+|---|---|---|
+| [Zasady Karpathy'ego](https://github.com/multica-ai/andrej-karpathy-skills) | `karpathy-guidelines` | orchestrator, analyst, spec-reviewer, architect, developer |
+| [Superpowers](https://github.com/obra/superpowers) | `subagent-driven-development`, `dispatching-parallel-agents`, `requesting-code-review` | orchestrator |
+| | `brainstorming` | analyst, brief-writer |
+| | `writing-plans` | architect |
+| | `test-driven-development`, `systematic-debugging` | developer, tester |
+| | `receiving-code-review` | developer |
+| | `verification-before-completion` | developer, tester |
+| | `finishing-a-development-branch` | publisher |
+| [Ponytail](https://github.com/DietrichGebert/ponytail) | `ponytail`, `ponytail-review` | architect, developer, designer, review-style |
+| [Skille Anthropic](https://github.com/anthropics/skills) | `frontend-design`, `canvas-design`, `web-artifacts-builder`, `theme-factory`, `brand-guidelines`, `doc-coauthoring`, `internal-comms`, `webapp-testing` | designer, brief-writer, copywriter, docs-writer, tester |
+| [claude-mem](https://github.com/thedotmack/claude-mem) | `mem-search` | orchestrator |
+
+Komendy instalacji są w
+[docs/ORCHESTRATION.pl.md](docs/ORCHESTRATION.pl.md#8-instalacja-i-synchronizacja).
 
 ## Elementy wspólne
 
@@ -75,8 +122,8 @@ pliku i zgłasza brak.
 
 ## Szybki start
 
-Instalacja agentów dla wszystkich projektów (kopiuje je do `~/.claude/agents/`
-i `~/.copilot/agents/`):
+Instalacja agentów i skilli dla wszystkich projektów (kopiuje je do
+`~/.claude/{agents,skills}/` i `~/.copilot/{agents,skills}/`):
 
 ```bash
 git clone https://github.com/luk98j/agent-factory.git && cd agent-factory
@@ -108,8 +155,8 @@ akceptacji. Publisher wymaga repozytorium git z remote i zalogowanego `gh`.
 
 | Kierunek | Komenda | Co robi |
 |---|---|---|
-| repozytorium → foldery użytkownika | `scripts/install.sh` | kopiuje `agents/*.agent.md`; niczego innego w folderach docelowych nie rusza |
-| folder użytkownika → repozytorium | `scripts/sync-back.sh` | tworzy gałąź `sync/agents-<znacznik-czasu>` i commituje zmienionych agentów |
+| repozytorium → foldery użytkownika | `scripts/install.sh` | kopiuje `agents/*.agent.md` i `skills/<nazwa>/`; niczego innego w folderach docelowych nie rusza |
+| folder użytkownika → repozytorium | `scripts/sync-back.sh` | tworzy gałąź `sync/<znacznik-czasu>` i commituje zmienionych agentów i skille |
 
 Przydatne opcje:
 
@@ -119,13 +166,13 @@ Przydatne opcje:
 - `scripts/sync-back.sh --from copilot` czyta z folderu Copilota zamiast
   Claude.
 - `scripts/sync-back.sh --add moj-agent` dodaje agenta, którego repozytorium
-  jeszcze nie śledzi.
+  jeszcze nie śledzi; `--add-skill moj-skill` robi to samo dla folderu skilla.
 
 Przed commitem `sync-back.sh` skanuje zmienione pliki pod kątem ścieżek
 domowych, adresów e-mail i formatów kluczy; jeśli coś znajdzie, zatrzymuje się.
 
 Skrypty są w Bashu i działają na macOS, Linuksie, WSL i Git Bash. Foldery
-docelowe można nadpisać zmiennymi `CLAUDE_AGENTS_DIR` i `COPILOT_AGENTS_DIR`.
+docelowe można nadpisać zmiennymi `CLAUDE_HOME_DIR` i `COPILOT_HOME_DIR`.
 
 ## Dokumentacja
 

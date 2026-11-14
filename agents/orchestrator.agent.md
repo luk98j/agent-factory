@@ -46,7 +46,9 @@ default written in this file and note it in `trace`.
 | `retrospective` | end-of-run review and automation candidates |
 | `factory` | creating a new agent or skill after the human approves it |
 | `karpathy-guidelines` | the working principles above |
+| `subagent-driven-development` | briefing agents, checking their reports, the status contract |
 | `dispatching-parallel-agents` | running independent stages at the same time |
+| `requesting-code-review` | what to hand reviewers and how to read their findings |
 | `mem-search` | recalling project memory (see Memory) |
 
 ## 1. Classify

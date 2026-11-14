@@ -264,32 +264,32 @@ const AGENTS = {
             pl: "Klasyfikuje zadanie, planuje przebieg, deleguje etapy, liczy próby, scala ustalenia, prowadzi stan i pamięć. Nie wykonuje pracy etapów." },
     pipes: ALL, tools: { en: ["all (inherited)"], pl: ["wszystkie (dziedziczone)"] },
     writes: { en: "runs/ and memory/ only", pl: "tylko runs/ i memory/" },
-    skills: ["task-classification", "findings-merge", "retrospective", "factory", "karpathy-guidelines", "dispatching-parallel-agents", "mem-search"] },
+    skills: ["task-classification", "findings-merge", "retrospective", "factory", "karpathy-guidelines", "subagent-driven-development", "dispatching-parallel-agents", "requesting-code-review", "mem-search"] },
   analyst: {
     role: { en: "Turns a request into requirements and testable acceptance criteria.",
             pl: "Zamienia prośbę w wymagania i testowalne kryteria akceptacji." },
-    pipes: "dev, design", tools: READ, writes: NOTHING, skills: ["ac-format", "brainstorming"] },
+    pipes: "dev, design", tools: READ, writes: NOTHING, skills: ["ac-format", "karpathy-guidelines", "brainstorming"] },
   "spec-reviewer": {
     role: { en: "Approves the specification or returns it to the analyst with questions.",
             pl: "Zatwierdza specyfikację albo zwraca ją analitykowi z pytaniami." },
-    pipes: "dev", tools: READ, writes: NOTHING, skills: ["spec-checklist"] },
+    pipes: "dev", tools: READ, writes: NOTHING, skills: ["spec-checklist", "karpathy-guidelines"] },
   architect: {
     role: { en: "Technical design and a plan in small tasks (dev). Checks a document against the code (docs).",
             pl: "Projekt techniczny i plan w małych zadaniach (dev). Recenzja zgodności dokumentu z kodem (docs)." },
     pipes: "dev, docs", tools: READ, writes: NOTHING,
-    skills: ["architecture-patterns", "stack-and-style", "writing-plans", "ponytail"] },
+    skills: ["architecture-patterns", "stack-and-style", "karpathy-guidelines", "writing-plans", "ponytail"] },
   developer: {
     role: { en: "Implements the plan test-first with the smallest complete change. The only agent that edits product code.",
             pl: "Implementuje plan test-first najmniejszą kompletną zmianą. Jedyny agent edytujący kod produktu." },
     pipes: "dev", tools: ["Read", "Grep", "Glob", "Edit", "Write", "Bash", "Skill"],
     writes: { en: "code in the working tree", pl: "kod w drzewie roboczym" },
-    skills: ["stack-and-style", "ponytail", "test-driven-development", "systematic-debugging", "security-checklist", "verification-before-completion"] },
+    skills: ["stack-and-style", "ponytail", "karpathy-guidelines", "test-driven-development", "systematic-debugging", "receiving-code-review", "security-checklist", "verification-before-completion"] },
   tester: {
     role: { en: "Checks every acceptance criterion with evidence and classifies failures: implementation, spec_unclear, environment.",
             pl: "Sprawdza każde kryterium akceptacji z dowodem i klasyfikuje błędy: implementation, spec_unclear, environment." },
     pipes: "dev", tools: ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "Skill"],
     writes: { en: "test files only", pl: "tylko pliki testów" },
-    skills: ["test-strategy", "stack-and-style", "webapp-testing", "verification-before-completion"] },
+    skills: ["test-strategy", "stack-and-style", "test-driven-development", "systematic-debugging", "webapp-testing", "verification-before-completion"] },
   "review-security": {
     role: { en: "Independent security review of the diff. Findings are blocking or warning.",
             pl: "Niezależny przegląd bezpieczeństwa diffu. Ustalenia blocking lub warning." },

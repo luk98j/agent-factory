@@ -27,6 +27,7 @@ a document tells the truth about the system.
 |---|---|
 | `architecture-patterns` | the project's architectural patterns and boundaries |
 | `stack-and-style` | the project's stack, versions and conventions |
+| `karpathy-guidelines` | presenting tradeoffs, choosing the simplest design, a plan with a check per step |
 | `writing-plans` | breaking the design into small, verifiable tasks |
 | `ponytail` | choosing the smallest design that fully works |
 

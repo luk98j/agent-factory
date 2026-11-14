@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Brings agent changes made in the user-level folder back into this
-# repository on a new branch, ready for a pull request. Only agents this
-# repository already tracks are synced, plus any named with --add.
+# Brings agent and skill changes made in the user-level folder back into this
+# repository on a new branch, ready for a pull request. Only agents and
+# skills this repository already tracks are synced, plus any named with
+# --add or --add-skill.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO_AGENTS_DIR="$REPO_DIR/agents"
-CLAUDE_DIR="${CLAUDE_AGENTS_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents}"
-COPILOT_DIR="${COPILOT_AGENTS_DIR:-$HOME/.copilot/agents}"
+CLAUDE_HOME_DIR="${CLAUDE_HOME_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+COPILOT_HOME_DIR="${COPILOT_HOME_DIR:-$HOME/.copilot}"
 
 # Things that must not reach a public repository: home paths, e-mail
 # addresses, and common credential formats.
@@ -15,18 +15,21 @@ SENSITIVE_PATTERN='/Users/[^/ ]+|/home/[^/ ]+|[A-Za-z]:\\Users\\|[A-Za-z0-9._%+-
 
 usage() {
   cat <<EOF
-Usage: scripts/sync-back.sh [--from claude|copilot] [--add NAME]... [--push]
-                            [--dry-run] [--allow-sensitive]
+Usage: scripts/sync-back.sh [--from claude|copilot] [--add NAME]...
+                            [--add-skill NAME]... [--push] [--dry-run]
+                            [--allow-sensitive]
 
-Copies changed agents from the user-level folder into agents/, on a new
-branch sync/agents-<timestamp>, and commits them.
+Copies changed agents and skills from the user-level folder into agents/ and
+skills/, on a new branch sync/<timestamp>, and commits them.
 
 Options:
   --from claude|copilot  folder to read from (default: claude)
-                           claude   $CLAUDE_DIR
-                           copilot  $COPILOT_DIR
+                           claude   $CLAUDE_HOME_DIR
+                           copilot  $COPILOT_HOME_DIR
   --add NAME             also bring in an agent the repository does not track
                          yet (NAME without .agent.md); repeatable
+  --add-skill NAME       also bring in a skill folder the repository does not
+                         track yet; repeatable
   --push                 push the branch and open a pull request with gh
   --dry-run              show what would change, write nothing
   --allow-sensitive      commit even if the safety scan finds something
@@ -37,12 +40,14 @@ source_name="claude"
 is_dry_run=false
 should_push=false
 is_sensitive_allowed=false
-added_names=""
+added_agents=""
+added_skills=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --from) source_name="${2:-}"; shift ;;
-    --add) added_names="$added_names ${2:-}"; shift ;;
+    --add) added_agents="$added_agents ${2:-}"; shift ;;
+    --add-skill) added_skills="$added_skills ${2:-}"; shift ;;
     --push) should_push=true ;;
     --dry-run) is_dry_run=true ;;
     --allow-sensitive) is_sensitive_allowed=true ;;
@@ -53,13 +58,13 @@ while [ $# -gt 0 ]; do
 done
 
 case "$source_name" in
-  claude) source_dir="$CLAUDE_DIR"; other_dir="$COPILOT_DIR" ;;
-  copilot) source_dir="$COPILOT_DIR"; other_dir="$CLAUDE_DIR" ;;
+  claude) source_home="$CLAUDE_HOME_DIR"; other_home="$COPILOT_HOME_DIR" ;;
+  copilot) source_home="$COPILOT_HOME_DIR"; other_home="$CLAUDE_HOME_DIR" ;;
   *) echo "--from must be claude or copilot" >&2; exit 2 ;;
 esac
 
-if [ ! -d "$source_dir" ]; then
-  echo "Source folder not found: $source_dir" >&2
+if [ ! -d "$source_home" ]; then
+  echo "Source folder not found: $source_home" >&2
   exit 1
 fi
 if ! git -C "$REPO_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -67,46 +72,57 @@ if ! git -C "$REPO_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-# Names to consider: every agent the repository tracks, plus --add names.
-names=""
-for repo_file in "$REPO_AGENTS_DIR"/*.agent.md; do
-  [ -f "$repo_file" ] && names="$names $(basename "$repo_file" .agent.md)"
+# Relative paths to consider: everything the repository tracks under agents/
+# and skills/, plus what --add and --add-skill name in the source folder.
+relative_files="$(
+  cd "$REPO_DIR"
+  ls agents/*.agent.md 2>/dev/null || true
+  [ -d skills ] && find skills -type f ! -name '.DS_Store' | sort
+)"
+for name in $added_agents; do
+  relative_files="$relative_files agents/$name.agent.md"
 done
-names="$names $added_names"
+for name in $added_skills; do
+  if [ -d "$source_home/skills/$name" ]; then
+    relative_files="$relative_files $(cd "$source_home" && find "skills/$name" -type f ! -name '.DS_Store' | sort)"
+  else
+    echo "  skipped    skills/$name (not in $source_home)"
+  fi
+done
 
 changed_files=""
-for name in $names; do
-  file_name="$name.agent.md"
-  source_file="$source_dir/$file_name"
+for relative_file in $relative_files; do
+  source_file="$source_home/$relative_file"
+  repo_file="$REPO_DIR/$relative_file"
   if [ ! -f "$source_file" ]; then
-    echo "  skipped    $file_name (not in $source_dir)"
+    echo "  skipped    $relative_file (not in $source_home)"
     continue
   fi
-  if [ -f "$REPO_AGENTS_DIR/$file_name" ] && cmp -s "$source_file" "$REPO_AGENTS_DIR/$file_name"; then
+  if [ -f "$repo_file" ] && cmp -s "$source_file" "$repo_file"; then
     continue
   fi
-  if [ -f "$REPO_AGENTS_DIR/$file_name" ]; then
-    echo "  changed    $file_name"
+  if [ -f "$repo_file" ]; then
+    echo "  changed    $relative_file"
   else
-    echo "  new        $file_name"
+    echo "  new        $relative_file"
   fi
-  if [ -f "$other_dir/$file_name" ] && ! cmp -s "$source_file" "$other_dir/$file_name"; then
-    echo "  warning    $file_name differs between the Claude and Copilot folders; using $source_name"
+  if [ -f "$other_home/$relative_file" ] && ! cmp -s "$source_file" "$other_home/$relative_file"; then
+    echo "  warning    $relative_file differs between the Claude and Copilot folders; using $source_name"
   fi
-  changed_files="$changed_files $file_name"
+  changed_files="$changed_files $relative_file"
 done
 
 if [ -z "$changed_files" ]; then
-  echo "Nothing to sync: the repository already matches $source_dir."
+  echo "Nothing to sync: the repository already matches $source_home."
   exit 0
 fi
 
 has_sensitive=false
-for file_name in $changed_files; do
-  if grep -nE "$SENSITIVE_PATTERN" "$source_dir/$file_name" >/dev/null 2>&1; then
+for relative_file in $changed_files; do
+  if grep -nE "$SENSITIVE_PATTERN" "$source_home/$relative_file" >/dev/null 2>&1; then
     has_sensitive=true
-    echo "Possible personal data or secret in $file_name:" >&2
-    grep -nE "$SENSITIVE_PATTERN" "$source_dir/$file_name" >&2
+    echo "Possible personal data or secret in $relative_file:" >&2
+    grep -nE "$SENSITIVE_PATTERN" "$source_home/$relative_file" >&2
   fi
 done
 if $has_sensitive && ! $is_sensitive_allowed; then
@@ -124,17 +140,16 @@ if [ -n "$(git -C "$REPO_DIR" status --porcelain)" ]; then
   exit 1
 fi
 
-branch_name="sync/agents-$(date +%Y%m%d-%H%M%S)"
+branch_name="sync/$(date +%Y%m%d-%H%M%S)"
 git -C "$REPO_DIR" switch -c "$branch_name"
 
-staged_paths=""
-for file_name in $changed_files; do
-  cp "$source_dir/$file_name" "$REPO_AGENTS_DIR/$file_name"
-  staged_paths="$staged_paths agents/$file_name"
+for relative_file in $changed_files; do
+  mkdir -p "$(dirname "$REPO_DIR/$relative_file")"
+  cp "$source_home/$relative_file" "$REPO_DIR/$relative_file"
 done
 # shellcheck disable=SC2086
-git -C "$REPO_DIR" add -- $staged_paths
-git -C "$REPO_DIR" commit -m "chore: sync agents from the $source_name user folder" -m "Updated:$changed_files"
+git -C "$REPO_DIR" add -- $changed_files
+git -C "$REPO_DIR" commit -m "chore: sync agents and skills from the $source_name user folder" -m "Updated:$changed_files"
 
 echo "Committed on branch $branch_name."
 

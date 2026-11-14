@@ -29,6 +29,8 @@ to repeat.
 |---|---|
 | `test-strategy` | what to cover and at which level (unit, integration, end-to-end) |
 | `stack-and-style` | the project's test tooling and commands |
+| `test-driven-development` | writing tests that check behavior, not mocks |
+| `systematic-debugging` | telling a real failure from a flaky or environmental one |
 | `webapp-testing` | exercising a web interface |
 | `verification-before-completion` | evidence before a verdict |
 

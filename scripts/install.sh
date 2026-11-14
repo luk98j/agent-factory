@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
-# Copies the agents in this repository to the user-level agent folders of
-# Claude Code and GitHub Copilot CLI, so they are available in every project.
-# Only files from agents/ are written; nothing else in the targets is touched.
+# Copies the agents and skills in this repository to the user-level folders
+# of Claude Code and GitHub Copilot CLI, so they are available in every
+# project. Only files from agents/ and skills/ are written; nothing else in
+# the targets is touched.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SOURCE_DIR="$REPO_DIR/agents"
-CLAUDE_DIR="${CLAUDE_AGENTS_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents}"
-COPILOT_DIR="${COPILOT_AGENTS_DIR:-$HOME/.copilot/agents}"
+CLAUDE_HOME_DIR="${CLAUDE_HOME_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+COPILOT_HOME_DIR="${COPILOT_HOME_DIR:-$HOME/.copilot}"
 
 usage() {
   cat <<EOF
 Usage: scripts/install.sh [--dry-run] [--claude-only | --copilot-only]
 
-Copies agents/*.agent.md to:
-  Claude Code   $CLAUDE_DIR
-  Copilot CLI   $COPILOT_DIR
+Copies agents/*.agent.md and skills/<name>/ to:
+  Claude Code   $CLAUDE_HOME_DIR/{agents,skills}
+  Copilot CLI   $COPILOT_HOME_DIR/{agents,skills}
 
 Options:
   --dry-run        show what would change, write nothing
   --claude-only    install for Claude Code only
   --copilot-only   install for Copilot CLI only
 
-Override the targets with CLAUDE_AGENTS_DIR and COPILOT_AGENTS_DIR.
+Override the targets with CLAUDE_HOME_DIR and COPILOT_HOME_DIR.
 EOF
 }
 
@@ -40,21 +40,31 @@ for arg in "$@"; do
   esac
 done
 
-if ! ls "$SOURCE_DIR"/*.agent.md >/dev/null 2>&1; then
-  echo "No agent files found in $SOURCE_DIR" >&2
+# Paths relative to the repository root: every agent file and every file
+# inside a skill folder.
+list_repo_files() {
+  (
+    cd "$REPO_DIR"
+    ls agents/*.agent.md 2>/dev/null || true
+    [ -d skills ] && find skills -type f ! -name '.DS_Store' | sort
+  )
+}
+
+relative_files="$(list_repo_files)"
+if [ -z "$relative_files" ]; then
+  echo "No agents or skills found in $REPO_DIR" >&2
   exit 1
 fi
 
 install_to() {
-  local label="$1" target_dir="$2"
+  local label="$1" target_home="$2"
   local new_count=0 updated_count=0 unchanged_count=0
-  echo "$label -> $target_dir"
-  $is_dry_run || mkdir -p "$target_dir"
+  echo "$label -> $target_home"
 
-  for source_file in "$SOURCE_DIR"/*.agent.md; do
-    local name target_file state
-    name="$(basename "$source_file")"
-    target_file="$target_dir/$name"
+  for relative_file in $relative_files; do
+    local source_file="$REPO_DIR/$relative_file"
+    local target_file="$target_home/$relative_file"
+    local state
     if [ ! -f "$target_file" ]; then
       state="new"; new_count=$((new_count + 1))
     elif cmp -s "$source_file" "$target_file"; then
@@ -63,15 +73,18 @@ install_to() {
       state="updated"; updated_count=$((updated_count + 1))
     fi
     if [ "$state" != "unchanged" ]; then
-      echo "  $state  $name"
-      $is_dry_run || cp "$source_file" "$target_file"
+      echo "  $state  $relative_file"
+      if ! $is_dry_run; then
+        mkdir -p "$(dirname "$target_file")"
+        cp "$source_file" "$target_file"
+      fi
     fi
   done
   echo "  $new_count new, $updated_count updated, $unchanged_count unchanged"
 }
 
-$should_install_claude && install_to "Claude Code" "$CLAUDE_DIR"
-$should_install_copilot && install_to "Copilot CLI" "$COPILOT_DIR"
+$should_install_claude && install_to "Claude Code" "$CLAUDE_HOME_DIR"
+$should_install_copilot && install_to "Copilot CLI" "$COPILOT_HOME_DIR"
 
 if $is_dry_run; then
   echo "Dry run: nothing was written."
