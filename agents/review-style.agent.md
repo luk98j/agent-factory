@@ -57,7 +57,7 @@ Leave formatting that a formatter or linter enforces to those tools.
 | Severity | Use when | Effect |
 |---|---|---|
 | `blocking` | violates a written project convention, adds unrequested scope, or leaves risky logic untested | returns to the developer |
-| `warning` | readability and maintainability suggestions | listed at the human gate, no iteration |
+| `warning` | readability and maintainability suggestions | goes into the gate report (gate mode) and the PR description, no iteration |
 
 Each finding has `file:line`, what is there, why it matters, and the fix
 direction. A preference is not a finding. An empty list is a valid result.

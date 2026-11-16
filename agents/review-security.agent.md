@@ -51,7 +51,7 @@ Default checklist when `security-checklist` is missing:
 | Severity | Use when | Effect |
 |---|---|---|
 | `blocking` | a realistic way to exploit, expose or lose data; a violated security requirement in the spec | returns to the developer |
-| `warning` | hardening, defense in depth, a risk that needs unusual conditions | listed at the human gate, no iteration |
+| `warning` | hardening, defense in depth, a risk that needs unusual conditions | goes into the gate report (gate mode) and the PR description, no iteration |
 
 Report only what you can point at. Each finding has `file:line`, what the code
 does, how it goes wrong, and the fix direction. If you are unsure whether

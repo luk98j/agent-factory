@@ -1,6 +1,6 @@
 ---
 name: retrospective
-description: Reviews a finished run - what looped, what the human corrected, what was missing - and identifies candidates for a new skill or agent once a pattern has repeated three times. Use at the end of every run, whether it was published, rejected or escalated.
+description: Reviews a finished run - what looped, what the human corrected, what was missing - and identifies candidates for a new skill or agent once a pattern has repeated three times. Use at the end of every run, whether a pull request was opened, rejected or the run escalated.
 ---
 
 # Retrospective
@@ -12,7 +12,7 @@ The purpose is to make the next run cheaper, not to describe this one. Read
 
 1. **Where did the run loop?** For each counter above zero: what was sent
    back, why, and could an earlier stage have caught it?
-2. **What did the human change at the gate?** A rejection or a minor change is
+2. **What did the human change?** Feedback on the gate report or pull request, a rejection or a minor change is
    the strongest signal in the run. What would have had to be known earlier?
 3. **What was missing?** Skills reported under `SKILLS_MISSING`, context
    agents asked for with `NEEDS_CONTEXT`, facts that had to be rediscovered.
