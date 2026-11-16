@@ -1,7 +1,7 @@
 ---
 name: tester
 description: Verifies an implementation against each acceptance criterion by running and, where needed, adding tests, then reports pass or fail per criterion with evidence. Runs after the developer in the dev pipeline and again after every fix.
-tools: [Read, Grep, Glob, Bash, Edit, Write, Skill]
+tools: [Read, Grep, Glob, Bash, Edit, Write, Skill, mcp__mem0__search_memories, mcp__mem0__get_memories, mcp__mem0__get_memory, mcp__mem0__add_memory, mcp__mem0__update_memory]
 ---
 
 # Tester
@@ -53,6 +53,22 @@ to repeat.
    `fail` needs the command, the output and the expected-versus-actual
    difference. Without evidence the status is `fail`.
 5. Warnings and noise in test output are worth reporting even on a green run.
+
+## Memory (mem0)
+
+Shared long-term memory is available through the `mem0` MCP server (Mem0
+cloud). It is advisory: the brief, the spec and the code in front of you win.
+
+- **Recall.** At the start, `search_memories` for the area you are working on
+  (decisions, rejected approaches, conventions, earlier findings). Use only
+  what is relevant.
+- **Save.** Before you finish, `add_memory` for a durable fact worth finding
+  again: one fact per note, with `agent_id` set to `tester`. Use the `app_id` and
+  `user_id` the orchestrator gives in the brief; if none, omit them.
+- **Never store** secrets, credentials, personal data or raw conversation. Do
+  not delete memories.
+- If the server is unavailable, say so under your status and carry on. Memory
+  failing is never a reason to stop.
 
 ## Final message
 

@@ -182,6 +182,12 @@ The gate comes before publication in every pipeline:
 | Reject with a note | the orchestrator picks the stage and re-dispatches |
 | Minor change | back to the author on the `code` or `revision` counter |
 
+Before the first stage that edits files, the orchestrator fetches, fast-forwards
+the default branch and creates the run's branch from it, so every new
+implementation starts from the latest default branch. It stops and asks if the
+working tree has changes it cannot account for. The publisher reuses that
+branch.
+
 The publisher reads `state.json` itself and returns `BLOCKED` without an
 acceptance entry. It never pushes to the default branch, never force-pushes
 and never merges the pull request.
@@ -275,6 +281,24 @@ the run's pull request.
 | run start | recall in three steps: `search` → `timeline` → `get_observations`; earlier decisions, rejected approaches, gate feedback, recurring findings |
 | during the run | only a few relevant lines go into briefs; nothing from the developer's reasoning reaches reviewers |
 | gate, escalation, end | a deliberate note (`save_memory`): the human decision with its reason, why a loop escalated, retrospective candidates |
+
+**mem0 (Mem0 cloud, when the MCP server is connected).** Every agent can recall
+(`search_memories`, `get_memories`, `get_memory`) and save (`add_memory`,
+`update_memory`) through the `mem0` server; nobody can delete. The tools are
+listed in each agent's `tools` as `mcp__mem0__*` (Claude Code names). The
+orchestrator passes `app_id` (project) and `user_id` (human) in each brief and
+each agent sets its own `agent_id`. Connect it once:
+
+```
+claude mcp add --scope user --transport http mem0 https://mcp.mem0.ai/mcp
+```
+
+The first call opens a browser sign-in. For headless use, send your API key
+as a bearer token. The Mem0 docs do not document the header name, so verify it
+on the dashboard first. Copilot CLI is not documented by Mem0: add the server
+to `~/.copilot/mcp-config.json` and check the tool names the agents need.
+Reviewers can write to the same store, so keep the developer's reasoning out
+of their briefs.
 
 Memory is advisory: `state.json` and the current request win. A run does not
 stop when memory is unavailable. The retrospective uses memory to count

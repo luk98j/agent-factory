@@ -172,6 +172,20 @@ Isolation rules:
 - The publisher is dispatched once every condition in section 5 holds (in gate
   mode also after the human's accept), never earlier.
 
+**Fresh start for a new implementation.** Before the first stage that edits
+files (developer, designer, docs-writer), start from the latest default branch,
+not from whatever is checked out:
+
+1. Run `git status`. If the working tree has changes you cannot account for,
+   stop and ask the human; never stash, discard or carry them into the run.
+2. `git fetch origin`, switch to the default branch and fast-forward it
+   (`git pull --ff-only`). If it cannot fast-forward, escalate.
+3. Create the run's branch from it (`<type>/<run-id>-<short-slug>`), record it
+   in `decisions`, and tell the publisher to reuse it.
+
+Skip this only when the human says to continue on an existing branch (for
+example, revising an open pull request); record that in `decisions` too.
+
 ## 4. Loops and error routing
 
 | What happened | Goes back to | Counter |
@@ -312,6 +326,16 @@ on every host. They are not part of the run's pull request.
   retrospective candidates. One fact per note, with the path of the run
   record it comes from.
 - Never store secrets. Wrap anything sensitive in `<private>` tags.
+
+**mem0 (when the `mem0` MCP server is connected).** Shared cloud memory that
+every agent can read and write (`search_memories`, `get_memories`,
+`add_memory`, `update_memory`). Use one `app_id` per project and one `user_id`
+per human, and put both in each brief so notes from different agents land in
+the same scope; agents set their own `agent_id`. Recall at run start with
+`search_memories`; save human decisions, escalation reasons and retrospective
+candidates with `add_memory`. Reviewers may recall project conventions but must
+not be briefed with the developer's reasoning, and notes tagged with
+`agent_id: developer` are not passed to them. Agents must not delete memories.
 - If memory is unavailable, record that in `trace` and carry on. A run must not
   fail because recall failed.
 

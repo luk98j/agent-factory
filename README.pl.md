@@ -115,7 +115,8 @@ Komendy instalacji są w
 |---|---|
 | **Stan** | `runs/<run-id>/state.json` to jedyne źródło prawdy. Zapisuje tylko orchestrator. |
 | **Bramka człowieka** | Każdy pipeline zatrzymuje się przed publikacją. Akceptuj, odrzuć z uwagą albo poproś o drobną zmianę. |
-| **Pamięć** | Po każdym przebiegu orchestrator zapisuje wnioski do `memory/runs/<run-id>.md` i czyta pasujące zapisy przy kolejnym starcie. [claude-mem](https://github.com/thedotmack/claude-mem) dodaje wyszukiwanie między sesjami. |
+| **Pamięć** | Po każdym przebiegu orchestrator zapisuje wnioski do `memory/runs/<run-id>.md` i czyta pasujące zapisy przy kolejnym starcie. [claude-mem](https://github.com/thedotmack/claude-mem) dodaje wyszukiwanie między sesjami. Agenci współdzielą też pamięć długoterminową przez serwer MCP [Mem0](https://mem0.ai) (`mcp__mem0__*`, bez usuwania). |
+| **Świeży branch** | Przed pierwszym etapem edytującym pliki orchestrator robi fetch, fast-forward domyślnego brancha i tworzy z niego branch przebiegu. |
 | **Dokumentacja idzie ze zmianą** | Przed bramką `docs-writer` aktualizuje dokumenty, które zmiana kodu czyni nieaktualnymi. Trafiają do tego samego pull requesta. |
 | **Podgląd** | [Claude Code Agent Monitor](https://github.com/hoangsonww/Claude-Code-Agent-Monitor) pokazuje drzewo przebiegu; każde wywołanie ma nazwę `[run-id] agent #próba`. |
 | **Zasady pracy** | [Zasady Karpathy'ego](https://github.com/multica-ai/andrej-karpathy-skills) u orchestratora, [Ponytail](https://github.com/DietrichGebert/ponytail) dla najmniejszej kompletnej zmiany, kontrakt między agentami z [Superpowers](https://github.com/obra/superpowers). |

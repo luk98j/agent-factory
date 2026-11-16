@@ -117,7 +117,8 @@ Install commands are in
 |---|---|
 | **State** | `runs/<run-id>/state.json` is the single source of truth. Only the orchestrator writes it. |
 | **Human gate** | Every pipeline stops before publication. Accept, reject with a note, or ask for a minor change. |
-| **Memory** | After every run the orchestrator writes what was learned to `memory/runs/<run-id>.md` and reads matching records at the next start. [claude-mem](https://github.com/thedotmack/claude-mem) adds search across sessions. |
+| **Memory** | After every run the orchestrator writes what was learned to `memory/runs/<run-id>.md` and reads matching records at the next start. [claude-mem](https://github.com/thedotmack/claude-mem) adds search across sessions. Agents also share long-term memory through the [Mem0](https://mem0.ai) MCP server (`mcp__mem0__*`, no delete). |
+| **Fresh branch** | Before the first stage that edits files, the orchestrator fetches, fast-forwards the default branch and creates the run's branch from it. |
 | **Docs move with the change** | Before the gate, `docs-writer` updates the documents a code change makes outdated. They ship in the same pull request. |
 | **Observation** | [Claude Code Agent Monitor](https://github.com/hoangsonww/Claude-Code-Agent-Monitor) shows the run tree; every dispatch is named `[run-id] agent #attempt`. |
 | **Working rules** | [Karpathy guidelines](https://github.com/multica-ai/andrej-karpathy-skills) for the orchestrator, [Ponytail](https://github.com/DietrichGebert/ponytail) for the smallest complete change, the [Superpowers](https://github.com/obra/superpowers) contract between agents. |
