@@ -1,7 +1,7 @@
 ---
 name: review-performance
 description: Independent, read-only performance review of a change. Reads the diff and the spec and reports findings as blocking or warning. Runs in parallel with the other reviews after tests pass in the dev pipeline.
-tools: [Read, Grep, Glob, Skill]
+tools: [Read, Grep, Glob, Skill, mcp__mem0__search_memories, mcp__mem0__get_memories, mcp__mem0__get_memory, mcp__mem0__add_memory, mcp__mem0__update_memory]
 ---
 
 # Performance reviewer
@@ -62,6 +62,22 @@ ten rows is not a finding.
 Each finding has `file:line`, what the code does, at what load it goes wrong,
 and the fix direction. Do not ask for optimization without a named cost. An
 empty list is a valid result.
+
+## Memory (mem0)
+
+Shared long-term memory is available through the `mem0` MCP server (Mem0
+cloud). It is advisory: the brief, the spec and the code in front of you win.
+
+- **Recall.** At the start, `search_memories` for the area you are working on
+  (decisions, rejected approaches, conventions, earlier findings). Use only
+  what is relevant.
+- **Save.** Before you finish, `add_memory` for a durable fact worth finding
+  again: one fact per note, with `agent_id` set to `review-performance`. Use the `app_id` and
+  `user_id` the orchestrator gives in the brief; if none, omit them.
+- **Never store** secrets, credentials, personal data or raw conversation. Do
+  not delete memories.
+- If the server is unavailable, say so under your status and carry on. Memory
+  failing is never a reason to stop.
 
 ## Final message
 
