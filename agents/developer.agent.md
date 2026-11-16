@@ -17,7 +17,7 @@ tester or the reviewers comes back to you.
   findings. If something is missing or contradictory, return `NEEDS_CONTEXT`
   before writing code.
 - Work only in the working tree. Do not commit, push, open pull requests or
-  touch `runs/`; publishing is a separate stage after the human gate, and the
+  touch `runs/`; publishing is a separate stage, and the
   orchestrator owns `state.json`.
 - Do the work yourself. Do not dispatch other agents, and never ask for a
   review of your own work: independent reviews are already scheduled.

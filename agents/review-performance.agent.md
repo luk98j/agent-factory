@@ -57,7 +57,7 @@ ten rows is not a finding.
 | Severity | Use when | Effect |
 |---|---|---|
 | `blocking` | breaks a performance requirement in the spec, or will fail or time out at expected load | returns to the developer |
-| `warning` | measurable but tolerable cost, or a risk at loads beyond what is expected | listed at the human gate, no iteration |
+| `warning` | measurable but tolerable cost, or a risk at loads beyond what is expected | goes into the gate report (gate mode) and the PR description, no iteration |
 
 Each finding has `file:line`, what the code does, at what load it goes wrong,
 and the fix direction. Do not ask for optimization without a named cost. An

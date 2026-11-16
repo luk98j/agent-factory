@@ -1,6 +1,6 @@
 ---
 name: findings-merge
-description: Merges the findings of parallel reviews into one list - removes duplicates, checks each severity, and separates blocking findings that go back to the developer from warnings that go to the human gate. Use after the reviews of a change return.
+description: Merges the findings of parallel reviews into one list - removes duplicates, checks each severity, and separates blocking findings that go back to the developer from warnings that go into the gate report (gate mode) and the PR description. Use after the reviews of a change return.
 ---
 
 # Merging review findings
@@ -23,7 +23,7 @@ clean list the developer can act on and the human can read.
    ask the reviewer instead.
 5. **Resolve conflicts.** When two reviewers want opposite things (for example
    caching for speed against freshness for correctness), do not pick. Record
-   both and send the conflict to the human gate, or to the architect when it
+   both and send the conflict to the human (an open conflict is an escalation), or to the architect when it
    is a design question.
 6. **Order** blocking findings by what must be fixed first: correctness and
    security, then requirements, then the rest.
@@ -38,15 +38,15 @@ A finding is `blocking` only if at least one is true:
 - it leaves new risky logic (a branch, loop, parser, money, security) without
   a test.
 
-Everything else is a `warning`: reported at the gate, never looped on.
+Everything else is a `warning`: listed in the gate report (gate mode) and the PR description, never looped on.
 
 ## Routing
 
 | Result | Next step |
 |---|---|
 | any blocking finding | developer, with only the blocking list; `code` counter +1 |
-| warnings only | human gate, listed in the report |
-| nothing | human gate |
+| warnings only | publisher, warnings listed in the gate report (gate mode) and the PR description |
+| nothing | publisher |
 
 Send the developer the finding itself (location, what goes wrong, fix
 direction), never the reviewer's wider commentary. After the fix, re-run only

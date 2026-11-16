@@ -90,6 +90,6 @@ and the chain map in every language the documentation is kept in.
 
 ## 7. Hand over
 
-Report the files created or changed and what was verified. The change goes
-through the normal human gate and is published as a pull request like any
-other run.
+Report the files created or changed and what was verified. The change is published as a pull request like any other change where the files live in
+a repository. User-level definition files without a repository are reported to
+the human directly.

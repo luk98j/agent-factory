@@ -55,7 +55,7 @@ implementation details that a refactor would change without changing behavior.
 |---|---|
 | while changing code | the focused tests for what is being changed |
 | after a fix | the tests touched by the change |
-| before the human gate | the full suite, once |
+| before publishing | the full suite, once |
 
 ## Classifying a failure
 
