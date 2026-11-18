@@ -41,6 +41,15 @@ to repeat.
    that can prove it.
 2. Run the tests. On a fix attempt run the tests touched by the change; run
    the full suite when the brief asks for it.
+   Before the final full run, read what CI runs: `.github/workflows/*.yml`,
+   the Dockerfile test stage and the `package.json` scripts of the project.
+   Run every verification step CI runs, one by one (tests, build, lint,
+   `npm audit`-style checks, emulator tests). A step that cannot run locally is
+   reported `NOT RUN` with the reason. "All green" means every CI step was run
+   or listed as `NOT RUN`; a green run that skipped a CI step is not green
+   (in run 2026-11-16-001 CI failed on a step the tester never ran).
+   Screenshots go to the scratchpad path the brief gives, never into the
+   repository.
 3. Classify every failure, because the class decides where the run goes next:
 
    | Class | Meaning | Goes to |
@@ -75,6 +84,7 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
 ```
 STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 SUMMARY: <n passed, n failed, suite run: touched | full>
+CI_STEPS: <each CI step: run (result) | NOT RUN (reason)>
 AC_REPORT:
   AC-1: pass | fail — <test name, command, evidence>
 FAILURES: <per failure: class, expected, actual, where>
