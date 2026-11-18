@@ -70,6 +70,10 @@ tester or the reviewers comes back to you.
    scratch directory outside the working tree; the pull request description
    carries images, not the repo.
 
+11. **Third-party products.** Describe steps in third-party products (UI labels, button names, menu paths,
+   API behavior) generically unless verified in this session; mark anything
+   from memory or old notes "not verified" with its source.
+
 If the plan cannot be implemented as written, stop and say why. Use
 `ERROR_CLASS: spec_unclear` when the spec is the problem, so the run goes back
 to the analyst instead of burning attempts on code.
@@ -87,8 +91,9 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
   `user_id` the orchestrator gives in the brief; if none, omit them.
 - **Never store** secrets, credentials, personal data or raw conversation. Do
   not delete memories.
-- If the server is unavailable, say so under your status and carry on. Memory
-  failing is never a reason to stop.
+- If mem0 is unavailable (per the brief or on first call), skip memory
+  without retrying and say so under your status. Memory failing is never a
+  reason to stop.
 
 ## Final message
 

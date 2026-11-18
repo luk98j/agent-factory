@@ -67,6 +67,9 @@ altered, and that anything new a reader needs is written down.
   reviewer can check it. If you could not verify something, mark it
   `[unverified]` instead of stating it.
 - Describe what is, not what should be.
+- Describe steps in third-party products (UI labels, button names, menu paths,
+  API behavior) generically unless verified in this session; mark anything
+  from memory or old notes "not verified" with its source.
 - You have no shell. Never report a check you cannot run (git diff, tests,
   builds) as done; list it under `UNVERIFIED` so the orchestrator runs it.
 - Prefer a short example or a diagram over a paragraph where it explains
@@ -86,8 +89,9 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
   `user_id` the orchestrator gives in the brief; if none, omit them.
 - **Never store** secrets, credentials, personal data or raw conversation. Do
   not delete memories.
-- If the server is unavailable, say so under your status and carry on. Memory
-  failing is never a reason to stop.
+- If mem0 is unavailable (per the brief or on first call), skip memory
+  without retrying and say so under your status. Memory failing is never a
+  reason to stop.
 
 ## Final message
 

@@ -146,6 +146,15 @@ Wzorowany na Superpowers (subagent-driven-development):
 - **Agenci robocze nie delegują.** Tylko orchestrator uruchamia agentów.
 - **Recenzenci są niezależni:** dostają diff, spec i AC, nigdy raport ani
   rozumowanie developera. Są tylko do odczytu, poprawki robi developer.
+  Synchronizacja dokumentacji działa po recenzjach: brak aktualizacji
+  dokumentów nie jest uwagą, chyba że diff błędnie zmienia udokumentowane
+  zachowanie lub zostawia sprzeczne dokumenty.
+- **Agenci bez narzędzia zapisu** zwracają raport w końcowej wiadomości;
+  orchestrator zapisuje go w `runs/<run-id>/<stage>.md`.
+- **Produkty zewnętrzne** opisuje się ogólnie, chyba że zweryfikowano je w
+  sesji.
+- **Zrzuty ekranu** zmian w UI trafiają tylko do opisu pull requesta;
+  dołącza je orchestrator albo prosi o to właściciela. Nigdy do repozytorium.
 - **`ERROR_CLASS`** (`implementation`, `spec_unclear`, `environment`) decyduje,
   dokąd wraca przebieg.
 
@@ -255,8 +264,11 @@ otwiera tylko pasujące zapisy. Pliki pamięci nie wchodzą do PR przebiegu.
 | bramka, eskalacja, koniec | świadoma notatka (`save_memory`): decyzja człowieka z powodem, przyczyna eskalacji, kandydaci z retrospektywy |
 
 Pamięć jest doradcza: `state.json` i bieżące polecenie mają pierwszeństwo.
-Brak pamięci nie zatrzymuje przebiegu. Retrospektywa używa pamięci do liczenia
-„trzech powtórzeń" między przebiegami.
+Brak pamięci nie zatrzymuje przebiegu: na starcie orchestrator raz sprawdza
+każdą skonfigurowaną pamięć, zapisuje to w `trace`, od razu informuje
+człowieka o awarii (mem0: `/mcp`) i w każdym briefie każe agentom pominąć
+pamięć bez ponawiania. Retrospektywa używa pamięci do liczenia „trzech
+powtórzeń" między przebiegami.
 
 **Claude Code Agent Monitor (podgląd).** Działa przez hooki hosta, więc nie
 wymaga niczego w agentach poza czytelnymi przebiegami: orchestrator zawsze
