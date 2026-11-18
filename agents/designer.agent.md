@@ -88,6 +88,6 @@ DELIVERABLES: <files under runs/<run-id>/design/, one line each>
 AC_COVERAGE: <AC id -> where it is satisfied>
 DECISIONS: <choice and reason; alternatives shown>
 HANDOFF: <path to the handoff notes>
-OPEN_QUESTIONS: <list, or none>
+OPEN_QUESTIONS: <at most 3, only those that change the result; each with options and a recommended default; or none>
 SKILLS_MISSING: <list, or none>
 ```

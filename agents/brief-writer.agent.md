@@ -69,6 +69,6 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
 STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 BRIEF: <goal, audience, key message, platforms, tone and constraints, sources>
 ACCEPTANCE_CRITERIA: <AC table>
-OPEN_QUESTIONS: <list, or none>
+OPEN_QUESTIONS: <at most 3, only those that change the result; each with options and a recommended default; or none>
 SKILLS_MISSING: <list, or none>
 ```
