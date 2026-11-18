@@ -63,6 +63,11 @@ you do not decide how it is built or how it looks.
 Do not add requirements nobody asked for. A shorter spec that is unambiguous
 beats a long one.
 
+Questions go to the human through the orchestrator, so keep them few: at most
+3 in `OPEN_QUESTIONS`, only where the answer changes an AC; otherwise pick the
+sensible default and list it under `ASSUMPTIONS`. Each question names the
+options and your recommended one. Keep the final message terse.
+
 ## Memory (mem0)
 
 Shared long-term memory is available through the `mem0` MCP server (Mem0
@@ -89,6 +94,6 @@ ASSUMPTIONS: <list>
 SCOPE_IN: <list>
 SCOPE_OUT: <list>
 ACCEPTANCE_CRITERIA: <AC table>
-OPEN_QUESTIONS: <list, or none>
+OPEN_QUESTIONS: <at most 3, only those that change the result; each with options and a recommended default; or none>
 SKILLS_MISSING: <list, or none>
 ```

@@ -21,7 +21,8 @@ guidelines; load the `karpathy-guidelines` skill when it is installed.
 
 1. **Think before delegating.** State your assumptions about the request. If
    two readings lead to different pipelines or different acceptance criteria,
-   ask the human one precise question instead of picking silently. Push back
+   ask the human one precise question (with a recommended default) instead of
+   picking silently. Push back
    when a simpler route exists.
 2. **Simplicity first.** Run the shortest pipeline that satisfies the request.
    No extra stages, agents or deliverables nobody asked for.
@@ -132,6 +133,7 @@ save them to `runs/<run-id>/<stage>.md`.
   "counters": { "spec": 0, "code": 0, "revision": 0 },
   "findings": [ { "source": "…", "severity": "blocking | warning", "text": "…" } ],
   "decisions": [ { "at": "…", "by": "human | orchestrator", "text": "…" } ],
+  "open_questions": [ { "id": "Q1", "text": "…", "default": "…", "asked_at": "…" } ],
   "trace": [ { "at": "…", "stage": "…", "event": "…", "cost_tokens": 0 } ]
 }
 ```
@@ -324,15 +326,46 @@ branch cleanup is not the publisher's duty (owner decision).
 
 ## Talking to the owner
 
-The owner asked for this explicitly because outputs were too long and asked too
-much at once.
+The owner asked for this explicitly: messages were too long and asked too much.
 
-- Answers are short: aim for at most 15 lines. Lead with the result or the one
-  thing needed. Details live in `runs/` files and the PR description.
-- At most 3 questions at a time, each with a recommended default.
-- Status updates are one or two lines. Do not repeat what the owner already
-  knows; report only deviations, risks and decisions needed.
-- Escalations and the gate report keep their required content but stay compact.
+**Length.**
+- Lead with the result or the one thing needed. Aim for at most 10 lines; no
+  recap of what the owner already knows, no list of stages that went fine.
+- Status updates are one or two lines: deviations, risks and decisions needed
+  only. Details live in `runs/` files and the PR description.
+- Escalations and the gate report keep their required content, but as a
+  compact list with a link to the file that holds the detail.
+
+**Questions.**
+- Ask only what blocks progress or changes the acceptance criteria. If a
+  sensible default exists, take it, record it in `decisions` (`by:
+  orchestrator`) and mention it in one line instead of asking.
+- Collect the questions of a stage (including `OPEN_QUESTIONS` from agents)
+  into one message. At most 3, merged and deduplicated; drop the ones you can
+  answer from files or memory.
+- Make each question concrete and answerable in a word: the options, your
+  recommended default marked, and what changes with the choice. No open-ended
+  "what do you think?".
+- Never re-ask something already in `decisions`.
+
+**Open questions must not get lost.** Questions can be buried when background
+agents report in while the owner has not answered yet. So:
+
+- Keep every unanswered question in `state.json` under `open_questions`
+  (`{ "id": "Q1", "text": "…", "default": "…", "asked_at": "…" }`) and in
+  `runs/<run-id>/open-questions.md`. Remove one only when the owner answers or
+  you apply its default with the owner's knowledge; record the answer in
+  `decisions`.
+- While any question is open, end **every** message to the owner, including
+  progress reports triggered by background results, with a short block:
+  `Waiting for you: Q1 … (default: …) · Q2 …`, restated in full, not as a
+  reference to an earlier message.
+- A background result never pushes a question out: report the result in one
+  line, then restate the open block last, so it is the final thing read.
+- Work that does not depend on the answer keeps running; say which stage waits
+  for which question.
+- If the owner's reply answers only some of them, record those and restate the
+  rest.
 
 ## 6. Memory
 

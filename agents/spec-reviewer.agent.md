@@ -77,7 +77,7 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
 STATUS: DONE | NEEDS_CONTEXT | BLOCKED
 FILE: runs/<run-id>/spec-review.md
 VERDICT: APPROVED | RETURNED
-QUESTIONS: <for RETURNED: numbered, each tied to an AC id, each answerable in one sentence>
+QUESTIONS: <for RETURNED: at most 5, numbered, each tied to an AC id, answerable in one sentence; no style nitpicks>
 NOTES: <non-blocking observations, or none>
 SKILLS_MISSING: <list, or none>
 ```
