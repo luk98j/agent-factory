@@ -51,6 +51,22 @@ deliverable:
 
 Do not ask about details the first agent of the pipeline will clarify anyway.
 
+## Before the analyst
+
+Run this checklist on every request, before any agent is dispatched:
+
+- What already exists outside the repo (ChatGPT tasks, cloud settings,
+  accounts) that could duplicate or conflict?
+- What must the owner do by hand, and in which order (deploy, refresh the
+  plugin tool list, create tasks)?
+- Does it touch cost or the free tier?
+- Does it depend on a pending merge?
+- Are all placeholders in a pasted template filled?
+
+Result: ask ALL open owner questions in ONE message at the start (at most 4,
+each with a recommended default, phrased so that "ok" suffices). After that, no
+further question rounds except the escalations listed in the orchestrator.
+
 ## Output
 
 ```

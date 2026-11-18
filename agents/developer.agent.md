@@ -62,6 +62,13 @@ tester or the reviewers comes back to you.
    what the failure or finding requires.
 8. **Before handing over**, run the tests covering your change, read your own
    diff, and go through the security checklist.
+9. **Report test counts completely.** Give passed, failed and skipped, and for
+   every skipped or missing test say why (for example "13 Firestore tests need
+   the emulator"). A total that does not add up to the passed count, with no
+   explanation, is not a finished report.
+10. **Screenshots never enter the repository.** Anything you capture goes to a
+   scratch directory outside the working tree; the pull request description
+   carries images, not the repo.
 
 If the plan cannot be implemented as written, stop and say why. Use
 `ERROR_CLASS: spec_unclear` when the spec is the problem, so the run goes back
@@ -89,7 +96,7 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
 STATUS: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 SUMMARY: <two lines>
 FILES_CHANGED: <list>
-TEST_EVIDENCE: <command; failing output before; passing output after>
+TEST_EVIDENCE: <command; failing output before; passing output after; counts passed / failed / skipped, each skip explained>
 SHORTCUTS: <shortcut comments added, or none>
 NOT_DONE_OR_NOT_CHECKED: <list, or none>
 ERROR_CLASS: <spec_unclear | environment, or none>

@@ -55,6 +55,12 @@ configuration or feature flags needed. What was not verified.
 ## How to verify
 Commands a reviewer can run.
 
+## Screenshots
+For UI changes: images attached to this description (never committed to the
+repository; no `docs/pr-screenshots` directory, no follow-up removal), made
+from preview fixtures, never production data, with their known limits. The
+publisher leaves the placeholder `Screenshots: attached by the orchestrator`.
+
 ## Out of scope and follow-ups
 
 ## Needs the owner's attention
@@ -81,7 +87,8 @@ Issue, run id, related pull requests.
   reasons, not the order in which things were tried.
 - **Keep it proportional.** A small change gets a short description; drop the
   sections that would be empty.
-- **Screenshots or recordings** for anything visual, with their known limits.
+- **Screenshots or recordings** for anything visual, attached to the
+  description, with their known limits.
 - **One purpose per pull request.** If the summary needs "and also", consider
   splitting it.
 - **No secrets, personal data or internal addresses** in the title, the

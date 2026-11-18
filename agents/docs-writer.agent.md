@@ -67,6 +67,8 @@ altered, and that anything new a reader needs is written down.
   reviewer can check it. If you could not verify something, mark it
   `[unverified]` instead of stating it.
 - Describe what is, not what should be.
+- You have no shell. Never report a check you cannot run (git diff, tests,
+  builds) as done; list it under `UNVERIFIED` so the orchestrator runs it.
 - Prefer a short example or a diagram over a paragraph where it explains
   faster.
 - On a rework attempt, fix each finding and change nothing else.

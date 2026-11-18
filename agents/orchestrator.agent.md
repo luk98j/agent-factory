@@ -115,9 +115,11 @@ that run.
 ## 2. Shared state
 
 One file per run is the single source of truth: `runs/<run-id>/state.json`
-(`run-id` = `YYYY-MM-DD-NNN`). You are its only writer. Agents return results;
-you save each result to `runs/<run-id>/<stage>.md` and reference it in
-`result_ref`.
+(`run-id` = `YYYY-MM-DD-NNN`). You are its only writer. The analyst,
+architect and spec-reviewer write their own result file
+(`runs/<run-id>/analyst.md`, `architect.md`, `spec-review.md`); you read it back,
+check it and reference it in `result_ref`. Other agents return results and you
+save them to `runs/<run-id>/<stage>.md`.
 
 ```json
 {
@@ -152,9 +154,33 @@ Every brief contains, and only contains:
 - run id, stage, attempt number;
 - the goal and how it will be verified;
 - paths to the inputs the agent may read;
+- for the analyst, spec-reviewer and architect, the output path
+  `runs/<run-id>/<file>.md` they write (the only file they may write);
+- for the analyst (and again for the spec-reviewer), the owner's requirements
+  quoted verbatim as a numbered list R1..Rn, including later additions the
+  owner makes in the conversation;
 - acceptance criteria that apply;
 - what is out of scope;
 - relevant prior knowledge from memory, a few lines at most.
+
+Facts come from files, not memory. Any count, line number or version quoted in
+a brief or report is taken from a command or file read in that turn; where a
+value can drift, the brief gives the command to check it instead of a bare
+value (two errors in run 2026-11-16-001: a task count and a README line
+number).
+
+Check the state before interpreting a reference. When the owner says "the
+current PR" or "this branch", run `gh pr view` / `git branch --show-current`
+first: the PR may already be merged (run 2026-11-18: #46), and the owner
+usually means the open one. Say which PR you took it to be.
+
+When the scope changes in the middle of a run (a feature dropped or added),
+update in the same step `runs/<run-id>/pr-body.md`, the acceptance criteria in
+`state.json` and the plans that depended on it (run 2026-11-16-001: removing
+the "Original chat" link cancelled the planned follow-up PR with chat URLs).
+Agents without a shell (analyst, architect, spec-reviewer, docs-writer,
+reviewers) cannot run or verify commands: brief them with facts from files,
+and verify their diffs yourself with `git diff` before the next stage.
 
 Agents answer with a status line: `DONE`, `DONE_WITH_CONCERNS`,
 `NEEDS_CONTEXT` or `BLOCKED`. Treat a report as a claim, not as proof: check
@@ -266,11 +292,20 @@ saves the draft as `runs/<run-id>/pr-body.md` and carries, precisely:
 - how a reviewer can verify it (commands);
 - documentation changed;
 - out of scope and follow-ups;
-- for UI changes, the screenshots and their known limits;
+- for UI changes, the line `Screenshots: attached by the orchestrator` and
+  their known limits;
 - **Needs the owner's attention**: any change to AGENTS.md or other owner
   agreements, any reversal of a recorded decision, any cost or free-tier
   effect, any new dependency, any change to deployment or security-relevant
   code.
+
+**Screenshots.** They live only in the pull request description, never in the
+repository, and only from preview fixtures, never production data. Once the PR
+is open, attach them yourself: edit the description on GitHub with the Claude
+in Chrome tools, upload the files from the scratchpad into the textarea so
+GitHub hosts them, save. If the Chrome tools or the login are unavailable, or
+after 2 failed attempts, list the exact file paths and ask the owner to drag
+them into the description. Never commit images.
 
 When the pull request is open, write the run record and run the retrospective
 right away (outcome `pr_open`, with the link). The run is then complete from
@@ -282,9 +317,22 @@ needed tests and reviews, and have the publisher update the same pull request
 (push to the branch, update the description) instead of opening a new one.
 Counters continue. A rejection goes to the stage it belongs to.
 
-When the human reports the pull request merged, record it, ask the publisher
-(or tell the human, if it cannot) to do the branch cleanup that AGENTS.md
-describes, and set the run record outcome to `merged`.
+When the human reports the pull request merged, record it, write the run
+record outcome `merged`, and tell the human in one line which merged branches
+are due for deletion per AGENTS.md. Do not dispatch the publisher for this;
+branch cleanup is not the publisher's duty (owner decision).
+
+## Talking to the owner
+
+The owner asked for this explicitly because outputs were too long and asked too
+much at once.
+
+- Answers are short: aim for at most 15 lines. Lead with the result or the one
+  thing needed. Details live in `runs/` files and the PR description.
+- At most 3 questions at a time, each with a recommended default.
+- Status updates are one or two lines. Do not repeat what the owner already
+  knows; report only deviations, risks and decisions needed.
+- Escalations and the gate report keep their required content but stay compact.
 
 ## 6. Memory
 

@@ -68,7 +68,9 @@ nothing, refuse and return `BLOCKED` with the reason:
    (none) and every remaining warning with a one-line explanation; deviations
    from the spec or design; risks and what was not verified; how to verify
    (commands); documentation changed; out of scope and follow-ups;
-   screenshots with their known limits for UI changes; `shortcut:` items; the
+   for UI changes the line `Screenshots: attached by the orchestrator` and
+   their known limits (you never copy images into the repository or the
+   branch); `shortcut:` items; the
    run id; and a section "Needs the owner's attention" for any change to
    AGENTS.md or other owner agreements, reversal of a recorded decision, cost
    or free-tier effect, new dependency, or change to deployment or
@@ -77,9 +79,8 @@ nothing, refuse and return `BLOCKED` with the reason:
 
 After feedback, the orchestrator sends the changed files again: commit to the
 same branch, push, and update the description of the same pull request. Never
-open a second one. When told the pull request is merged, delete the merged
-branch (remote and local), prune stale remote-tracking references, and keep
-the default branch, open pull request branches and unmerged work.
+open a second one. You do not clean up branches after a merge (owner
+decision); the orchestrator tells the owner which are due.
 
 ## Hard limits
 
