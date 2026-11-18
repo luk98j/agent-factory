@@ -151,7 +151,15 @@ Modeled on Superpowers (subagent-driven development):
 - **Worker agents do not delegate.** Only the orchestrator dispatches agents.
 - **Reviewers are independent:** they get the diff, the spec and the
   acceptance criteria, never the developer's report or reasoning. They are
-  read-only; the developer makes the fixes.
+  read-only; the developer makes the fixes. Docs sync runs after the reviews:
+  missing doc updates are not a finding unless the diff changes documented
+  behavior incorrectly or leaves contradicting docs.
+- **Agents without a write tool** return the report in the final message; the
+  orchestrator saves it to `runs/<run-id>/<stage>.md`.
+- **Third-party products** are described generically unless verified in the
+  session.
+- **Screenshots** of UI changes go only into the pull request description; the
+  orchestrator attaches them, or asks the owner to. Never committed.
 - **`ERROR_CLASS`** (`implementation`, `spec_unclear`, `environment`) decides
   where the run goes next.
 
@@ -301,8 +309,11 @@ Reviewers can write to the same store, so keep the developer's reasoning out
 of their briefs.
 
 Memory is advisory: `state.json` and the current request win. A run does not
-stop when memory is unavailable. The retrospective uses memory to count
-"three repetitions" across runs.
+stop when memory is unavailable: at run start the orchestrator probes each
+configured memory once, records it in `trace`, tells the human at once if it
+is down (mem0: run `/mcp`), and tells agents in every brief to skip memory
+without retrying. The retrospective uses memory to count "three repetitions"
+across runs.
 
 **Claude Code Agent Monitor (observation).** It works through host hooks, so
 it needs nothing from the agents except readable runs: the orchestrator always

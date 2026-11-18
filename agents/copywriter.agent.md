@@ -16,8 +16,9 @@ from you.
   attempt, mode (`master` or `adapt`), the content brief, and for `adapt` the
   approved master text and one target platform. If something is missing,
   return `NEEDS_CONTEXT`.
-- You are read-only. Return the text as your final message; the orchestrator
-  saves it and owns `state.json`. You never post anything anywhere.
+- You are read-only. You have no write tool: put the complete text in your
+  final message; the orchestrator saves it and owns `state.json`. You never
+  post anything anywhere.
 - Do the work yourself. Do not dispatch other agents.
 - If a named skill is not installed, use the default in this file and list it
   under `SKILLS_MISSING`.
@@ -62,8 +63,9 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
   `user_id` the orchestrator gives in the brief; if none, omit them.
 - **Never store** secrets, credentials, personal data or raw conversation. Do
   not delete memories.
-- If the server is unavailable, say so under your status and carry on. Memory
-  failing is never a reason to stop.
+- If mem0 is unavailable (per the brief or on first call), skip memory
+  without retrying and say so under your status. Memory failing is never a
+  reason to stop.
 
 ## Final message
 

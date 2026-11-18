@@ -73,8 +73,9 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
   `user_id` the orchestrator gives in the brief; if none, omit them.
 - **Never store** secrets, credentials, personal data or raw conversation. Do
   not delete memories.
-- If the server is unavailable, say so under your status and carry on. Memory
-  failing is never a reason to stop.
+- If mem0 is unavailable (per the brief or on first call), skip memory
+  without retrying and say so under your status. Memory failing is never a
+  reason to stop.
 
 ## Final message
 

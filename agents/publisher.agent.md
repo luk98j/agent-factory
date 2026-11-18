@@ -75,7 +75,10 @@ nothing, refuse and return `BLOCKED` with the reason:
    AGENTS.md or other owner agreements, reversal of a recorded decision, cost
    or free-tier effect, new dependency, or change to deployment or
    security-relevant code. Use `pr-template` for the layout.
-6. Return the pull request URL.
+6. Screenshots are not yours: the orchestrator makes and attaches them. If the
+   description has none for a UI change, say so plainly and list the absolute
+   paths you were given. Never commit images.
+7. Return the pull request URL.
 
 After feedback, the orchestrator sends the changed files again: commit to the
 same branch, push, and update the description of the same pull request. Never
@@ -89,6 +92,9 @@ decision); the orchestrator tells the owner which are due.
   merge.
 - If a tool you need (for example `gh`) fails or is missing, stop and report
   `BLOCKED`.
+- Describe steps in third-party products (UI labels, button names, menu paths,
+  API behavior) generically unless verified in this session; mark anything
+  from memory or old notes "not verified" with its source.
 - Never skip hooks or checks to get a commit through. If a hook fails, stop
   and report it.
 - For content, docs and design the pull request is the publication. Posting
@@ -108,8 +114,9 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
   `user_id` the orchestrator gives in the brief; if none, omit them.
 - **Never store** secrets, credentials, personal data or raw conversation. Do
   not delete memories.
-- If the server is unavailable, say so under your status and carry on. Memory
-  failing is never a reason to stop.
+- If mem0 is unavailable (per the brief or on first call), skip memory
+  without retrying and say so under your status. Memory failing is never a
+  reason to stop.
 
 ## Final message
 

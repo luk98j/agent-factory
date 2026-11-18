@@ -62,6 +62,9 @@ to repeat.
    `fail` needs the command, the output and the expected-versus-actual
    difference. Without evidence the status is `fail`.
 5. Warnings and noise in test output are worth reporting even on a green run.
+6. Describe steps in third-party products (UI labels, button names, menu paths,
+   API behavior) generically unless verified in this session; mark anything
+   from memory or old notes "not verified" with its source.
 
 ## Memory (mem0)
 
@@ -76,8 +79,9 @@ cloud). It is advisory: the brief, the spec and the code in front of you win.
   `user_id` the orchestrator gives in the brief; if none, omit them.
 - **Never store** secrets, credentials, personal data or raw conversation. Do
   not delete memories.
-- If the server is unavailable, say so under your status and carry on. Memory
-  failing is never a reason to stop.
+- If mem0 is unavailable (per the brief or on first call), skip memory
+  without retrying and say so under your status. Memory failing is never a
+  reason to stop.
 
 ## Final message
 

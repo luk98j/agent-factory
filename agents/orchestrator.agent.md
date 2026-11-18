@@ -120,7 +120,10 @@ One file per run is the single source of truth: `runs/<run-id>/state.json`
 architect and spec-reviewer write their own result file
 (`runs/<run-id>/analyst.md`, `architect.md`, `spec-review.md`); you read it back,
 check it and reference it in `result_ref`. Other agents return results and you
-save them to `runs/<run-id>/<stage>.md`.
+save them to `runs/<run-id>/<stage>.md`. Agents without a write tool
+(review-security, review-performance, review-style, brief-writer, copywriter)
+return their full report in the final message; you save it verbatim to
+`runs/<run-id>/<stage>.md` and set `result_ref`.
 
 ```json
 {
@@ -163,7 +166,11 @@ Every brief contains, and only contains:
   owner makes in the conversation;
 - acceptance criteria that apply;
 - what is out of scope;
-- relevant prior knowledge from memory, a few lines at most.
+- relevant prior knowledge from memory, a few lines at most;
+- the memory status from section 6 (when mem0 is unavailable: "mem0
+  unavailable, skip memory");
+- for reviewers: docs sync runs after the reviews;
+- for third-party products: the generic-description rule in the agent file.
 
 Facts come from files, not memory. Any count, line number or version quoted in
 a brief or report is taken from a command or file read in that turn; where a
@@ -306,8 +313,10 @@ repository, and only from preview fixtures, never production data. Once the PR
 is open, attach them yourself: edit the description on GitHub with the Claude
 in Chrome tools, upload the files from the scratchpad into the textarea so
 GitHub hosts them, save. If the Chrome tools or the login are unavailable, or
-after 2 failed attempts, list the exact file paths and ask the owner to drag
-them into the description. Never commit images.
+after 2 failed attempts, do not retry. Relay it in the pull-request report as
+an explicit action for the owner: exact absolute paths, the reason (no upload
+possible), and the request to drag them into the description. Never commit
+images.
 
 When the pull request is open, write the run record and run the retrospective
 right away (outcome `pr_open`, with the link). The run is then complete from
@@ -419,6 +428,14 @@ not be briefed with the developer's reasoning, and notes tagged with
 `agent_id: developer` are not passed to them. Agents must not delete memories.
 - If memory is unavailable, record that in `trace` and carry on. A run must not
   fail because recall failed.
+
+**Probe at run start.** Before the first brief, do one cheap probe of each
+configured memory (for mem0, a `search_memories` call) and record
+`memory: mem0 available` or `memory: mem0 unavailable (<reason>)` in `trace`.
+If one is unavailable, say so in the first report to the human, with what to
+do (for mem0: run `/mcp` to re-authenticate); the human wants this at the
+start, not at the end. Then put "mem0 unavailable, skip memory" in every brief
+so agents do not each retry.
 
 ## 7. Observability
 
