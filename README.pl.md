@@ -4,8 +4,8 @@
 
 Zestaw 14 agentów i 15 ogólnych skilli działających jako jeden pipeline w
 **Claude Code** i **GitHub Copilot**. Jeden orchestrator planuje i deleguje,
-wyspecjalizowani agenci wykonują pracę, a nic nie jest publikowane bez
-akceptacji człowieka.
+wyspecjalizowani agenci wykonują pracę, a człowiek sprawdza każdą zmianę: na bramce
+przed pull requestem albo w samym pull requeście (domyślnie).
 
 Każdy agent to jeden plik, który oba narzędzia ładują bez zmian. Agenci są
 generyczni: checklisty, formaty i procedury pochodzą ze skilli w tym
@@ -19,11 +19,12 @@ flowchart LR
   U([Zadanie]) --> O{{orchestrator}}
   O -->|dev| A1[analyst] --> SR[spec-reviewer] --> AR[architect] --> D[developer] --> T[tester]
   T --> RS[review-security] & RP[review-performance] & RY[review-style]
-  RS & RP & RY --> DSY[docs-writer: sync] --> G{Bramka człowieka}
+  RS & RP & RY --> DSY[docs-writer: sync] --> G{Bramka człowieka: tylko tryb gate}
   O -->|content| BW[brief-writer] --> CW[copywriter] --> CA[copywriter × platforma] --> G
   O -->|docs| DW[docs-writer] --> AD[architect: recenzja] --> G
   O -->|design| A2[analyst] --> DS[designer] --> G
   G -->|akceptuj| P[publisher] --> PR([Pull request])
+  DSY & CA & AD & DS -.->|tryb pr: bez bramki| P
   G -.->|odrzuć z uwagą| O
 ```
 
@@ -35,21 +36,26 @@ przeglądarce, przełącznik PL w prawym górnym rogu).
 
 | Pipeline | Kiedy | Etapy | Pętle |
 |---|---|---|---|
-| **dev** | zmiana kodu | analyst → spec-reviewer → architect → developer → tester → trzy przeglądy równolegle → docs-writer (sync) → bramka → publisher | spec niejasna → analyst (`spec` ≤ 3); błąd testu lub ustalenie blokujące → developer (`code` ≤ 3); błąd środowiska → 2 ponowienia |
-| **content** | tekst dla odbiorców | brief-writer → copywriter → copywriter per platforma (równolegle) → bramka → publisher | bramka → autor (`revision` ≤ 3) |
-| **docs** | opis istniejącego | docs-writer → architect (recenzja) → bramka → publisher | architect → docs-writer (`revision` ≤ 3) |
-| **design** | „design", makieta, UI/UX, redesign, `/design` | analyst → designer → bramka → publisher | bramka → designer lub analyst (`revision` ≤ 3) |
+| **dev** | zmiana kodu | analyst → spec-reviewer → architect → developer → tester → trzy przeglądy równolegle → docs-writer (sync) → [bramka] → publisher | spec niejasna → analyst (`spec` ≤ 3); błąd testu lub ustalenie blokujące → developer (`code` ≤ 3); błąd środowiska → 2 ponowienia |
+| **content** | tekst dla odbiorców | brief-writer → copywriter → copywriter per platforma (równolegle) → [bramka] → publisher | bramka → autor (`revision` ≤ 3) |
+| **docs** | opis istniejącego | docs-writer → architect (recenzja) → [bramka] → publisher | architect → docs-writer (`revision` ≤ 3) |
+| **design** | „design", makieta, UI/UX, redesign, `/design` | analyst → designer → [bramka] → publisher | bramka → designer lub analyst (`revision` ≤ 3) |
 
-Po wyczerpaniu licznika przebieg zatrzymuje się i czeka na człowieka.
+`[bramka]` obowiązuje tylko w trybie przeglądu `gate`. Domyślnie (tryb `pr`)
+publisher otwiera pull request, gdy testy i przeglądy są czyste, a punktem
+przeglądu jest sam pull request; orchestrator przełącza na `gate` przy zmianach
+trudnych do cofnięcia przez zamknięcie PR (umowy właściciela, wdrożenia,
+poświadczenia, migracje danych, koszty, publikacja poza PR) albo na Twoją
+prośbę. Po wyczerpaniu licznika przebieg zatrzymuje się i czeka na człowieka.
 
 ## Agenci
 
 | Agent | Rola | Narzędzia | Zapisuje | Skille |
 |---|---|---|---|---|
 | `orchestrator` | klasyfikuje zadanie, deleguje etapy, liczy próby, prowadzi stan i pamięć | wszystkie (dziedziczone) | `runs/`, `memory/` | `task-classification`, `findings-merge`, `retrospective`, `factory`, `karpathy-guidelines`, `subagent-driven-development`, `dispatching-parallel-agents`, `requesting-code-review`, `mem-search` |
-| `analyst` | wymagania i testowalne kryteria akceptacji | Read, Grep, Glob, Skill | nic | `ac-format`, `karpathy-guidelines`, `brainstorming` |
-| `spec-reviewer` | zatwierdza spec albo zwraca z pytaniami | Read, Grep, Glob, Skill | nic | `spec-checklist`, `karpathy-guidelines` |
-| `architect` | projekt techniczny i plan; recenzja dokumentacji względem kodu | Read, Grep, Glob, Skill | nic | `architecture-patterns`, `stack-and-style`, `karpathy-guidelines`, `writing-plans`, `ponytail` |
+| `analyst` | wymagania i testowalne kryteria akceptacji | Read, Grep, Glob, Write, Skill | własny plik wyniku w `runs/` | `ac-format`, `karpathy-guidelines`, `brainstorming` |
+| `spec-reviewer` | zatwierdza spec albo zwraca z pytaniami | Read, Grep, Glob, Write, Skill | własny plik wyniku w `runs/` | `spec-checklist`, `karpathy-guidelines` |
+| `architect` | projekt techniczny i plan; recenzja dokumentacji względem kodu | Read, Grep, Glob, Write, Skill | własny plik wyniku w `runs/` | `architecture-patterns`, `stack-and-style`, `karpathy-guidelines`, `writing-plans`, `ponytail` |
 | `developer` | implementuje plan test-first; jedyny agent edytujący kod produktu | Read, Grep, Glob, Edit, Write, Bash, Skill | kod | `stack-and-style`, `ponytail`, `karpathy-guidelines`, `test-driven-development`, `systematic-debugging`, `receiving-code-review`, `security-checklist`, `verification-before-completion` |
 | `tester` | sprawdza każde kryterium akceptacji z dowodem | Read, Grep, Glob, Bash, Edit, Write, Skill | pliki testów | `test-strategy`, `stack-and-style`, `test-driven-development`, `systematic-debugging`, `webapp-testing`, `verification-before-completion` |
 | `review-security` | niezależny przegląd bezpieczeństwa diffu | Read, Grep, Glob, Skill | nic | `security-checklist`, `stack-and-style` |
@@ -59,7 +65,7 @@ Po wyczerpaniu licznika przebieg zatrzymuje się i czeka na człowieka.
 | `brief-writer` | brief: cel, odbiorca, przekaz | Read, Grep, Glob, Skill | nic | `brief-format`, `brand-guidelines`, `brainstorming` |
 | `copywriter` | tekst główny i adaptacje per platforma | Read, Grep, Glob, Skill | nic | `platform-rules`, `brand-guidelines`, `internal-comms`, `doc-coauthoring` |
 | `docs-writer` | pisze nową dokumentację; utrzymuje ją zgodną ze zmianami kodu | Read, Grep, Glob, Edit, Write, Skill | dokumentacja | `docs-template`, `doc-coauthoring`, `stack-and-style` |
-| `publisher` | gałąź, commit, pull request, tylko po zapisanej akceptacji człowieka | Read, Grep, Glob, Bash, Skill | git | `commit-conventions`, `pr-template`, `finishing-a-development-branch` |
+| `publisher` | gałąź, commit, pull request (w trybie gate tylko po zapisanej akceptacji człowieka) | Read, Grep, Glob, Bash, Skill | git | `commit-conventions`, `pr-template`, `finishing-a-development-branch` |
 
 Brak skilla nigdy nie blokuje agenta: używa on domyślnej checklisty ze swojego
 pliku i zgłasza brak.
@@ -114,7 +120,8 @@ Komendy instalacji są w
 | Element | Co robi |
 |---|---|
 | **Stan** | `runs/<run-id>/state.json` to jedyne źródło prawdy. Zapisuje tylko orchestrator. |
-| **Bramka człowieka** | Każdy pipeline zatrzymuje się przed publikacją. Akceptuj, odrzuć z uwagą albo poproś o drobną zmianę. |
+| **Tryb przeglądu** | `pr` (domyślny): punktem przeglądu jest pull request. `gate`: przebieg zatrzymuje się przed publikacją; akceptuj, odrzuć z uwagą albo poproś o drobną zmianę. |
+| **Rozmowa z właścicielem** | Krótkie wiadomości, najwyżej 3 połączone pytania z rekomendowanym wyborem i blok `Waiting for you` dla każdego pytania bez odpowiedzi. |
 | **Pamięć** | Po każdym przebiegu orchestrator zapisuje wnioski do `memory/runs/<run-id>.md` i czyta pasujące zapisy przy kolejnym starcie. [claude-mem](https://github.com/thedotmack/claude-mem) dodaje wyszukiwanie między sesjami. Agenci współdzielą też pamięć długoterminową przez serwer MCP [Mem0](https://mem0.ai) (`mcp__mem0__*`, bez usuwania). |
 | **Świeży branch** | Przed pierwszym etapem edytującym pliki orchestrator robi fetch, fast-forward domyślnego brancha i tworzy z niego branch przebiegu. |
 | **Dokumentacja idzie ze zmianą** | Przed bramką `docs-writer` aktualizuje dokumenty, które zmiana kodu czyni nieaktualnymi. Trafiają do tego samego pull requesta. |
@@ -149,8 +156,9 @@ Potem opisz zadanie zwykłym językiem. Orchestrator wybierze pipeline:
 - „Opisz, jak działa moduł płatności" → docs
 - „Napisz post na LinkedIn o nowej funkcji" → content
 
-Przebieg zatrzyma się na bramce z raportem. Pull request powstaje dopiero po
-akceptacji. Publisher wymaga repozytorium git z remote i zalogowanego `gh`.
+W trybie `pr` (domyślnym) orchestrator sam otwiera pull request, gdy testy i
+przeglądy są czyste, a Ty sprawdzasz go tam. W trybie `gate` przebieg zatrzymuje
+się z raportem, a pull request powstaje dopiero po akceptacji. Publisher wymaga repozytorium git z remote i zalogowanego `gh`.
 
 ## Synchronizacja repozytorium z Twoimi agentami
 

@@ -10,10 +10,10 @@ Wersja wizualna: [agent-chain.html](agent-chain.html).
 
 | Agent | Pipeline | Rola | Narzędzia | Zapis |
 |---|---|---|---|---|
-| `orchestrator` | wszystkie | klasyfikuje, planuje, deleguje, liczy próby, prowadzi stan i pamięć, zatrzymuje na bramce | wszystkie (dziedziczone) | tylko `runs/` i `memory/` |
-| `analyst` | dev, design | wymagania i kryteria akceptacji | Read, Grep, Glob, Skill | nie |
-| `spec-reviewer` | dev | zatwierdza spec albo zwraca z pytaniami | Read, Grep, Glob, Skill | nie |
-| `architect` | dev, docs | projekt techniczny i plan; recenzja dokumentacji | Read, Grep, Glob, Skill | nie |
+| `orchestrator` | wszystkie | klasyfikuje, planuje, deleguje, liczy próby, prowadzi stan i pamięć, wybiera tryb przeglądu, zatrzymuje na bramce (tryb gate) i przy eskalacjach | wszystkie (dziedziczone) | tylko `runs/` i `memory/` |
+| `analyst` | dev, design | wymagania i kryteria akceptacji | Read, Grep, Glob, Write, Skill | tylko własny plik wyniku `runs/<id>/analyst.md` |
+| `spec-reviewer` | dev | zatwierdza spec albo zwraca z pytaniami | Read, Grep, Glob, Write, Skill | tylko własny plik wyniku `runs/<id>/spec-review.md` |
+| `architect` | dev, docs | projekt techniczny i plan; recenzja dokumentacji | Read, Grep, Glob, Write, Skill | tylko własny plik wyniku `runs/<id>/architect.md` |
 | `developer` | dev | kod test-first, poprawki | Read, Grep, Glob, Edit, Write, Bash, Skill | kod |
 | `tester` | dev | weryfikacja per AC z dowodem | Read, Grep, Glob, Bash, Edit, Write, Skill | tylko testy |
 | `review-security` | dev | przegląd bezpieczeństwa | Read, Grep, Glob, Skill | nie |
@@ -23,7 +23,7 @@ Wersja wizualna: [agent-chain.html](agent-chain.html).
 | `brief-writer` | content | brief: cel, odbiorca, przekaz | Read, Grep, Glob, Skill | nie |
 | `copywriter` | content | tekst główny i adaptacje per platforma | Read, Grep, Glob, Skill | nie |
 | `docs-writer` | docs, dev | nowy dokument (docs) oraz aktualizacja dokumentacji po zmianie (dev, tryb `sync`) | Read, Grep, Glob, Edit, Write, Skill | tylko dokumentacja |
-| `publisher` | wszystkie | gałąź, commit, PR po akceptacji | Read, Grep, Glob, Bash, Skill | git |
+| `publisher` | wszystkie | gałąź, commit, PR (w trybie gate po zapisanej akceptacji) | Read, Grep, Glob, Bash, Skill | git |
 
 ## 2. Format uniwersalny
 
@@ -70,20 +70,48 @@ flowchart LR
   U([Zadanie]) --> O{{orchestrator}}
   O -->|dev| A1[analyst] --> SR[spec-reviewer] --> AR[architect] --> D[developer] --> T[tester]
   T --> RS[review-security] & RP[review-performance] & RY[review-style]
-  RS & RP & RY --> DSY[docs-writer: sync] --> G{Bramka człowieka}
+  RS & RP & RY --> DSY[docs-writer: sync] --> G{Bramka człowieka: tylko tryb gate}
   O -->|content| BW[brief-writer] --> CW[copywriter] --> CA[copywriter × platforma] --> G
   O -->|docs| DW[docs-writer] --> AD[architect: recenzja] --> G
   O -->|design| A2[analyst] --> DS[designer] --> G
   G -->|akceptuj| P[publisher] --> PR([Pull request])
+  DSY & CA & AD & DS -.->|tryb pr: bez bramki| P
   G -.->|odrzuć z uwagą| O
 ```
 
 | Pipeline | Kiedy | Etapy |
 |---|---|---|
-| dev | zmiana kodu | analyst → spec-reviewer → architect → developer → tester → 3 przeglądy równolegle → docs-writer (sync) → bramka → publisher |
-| content | tekst dla odbiorców | brief-writer → copywriter → copywriter per platforma (równolegle) → bramka → publisher |
-| docs | opis istniejącego | docs-writer → architect (recenzja) → bramka → publisher |
-| design | „design", makieta, wireframe, UI/UX, redesign, `/design` | analyst → designer → bramka → publisher |
+| dev | zmiana kodu | analyst → spec-reviewer → architect → developer → tester → 3 przeglądy równolegle → docs-writer (sync) → [bramka] → publisher |
+| content | tekst dla odbiorców | brief-writer → copywriter → copywriter per platforma (równolegle) → [bramka] → publisher |
+| docs | opis istniejącego | docs-writer → architect (recenzja) → [bramka] → publisher |
+| design | „design", makieta, wireframe, UI/UX, redesign, `/design` | analyst → designer → [bramka] → publisher |
+
+`[bramka]` jest tylko w trybie gate, patrz niżej. Każda prośba przechodzi
+najpierw listę „Before the analyst” ze skilla `task-classification`: co już
+istnieje poza repozytorium, co właściciel musi zrobić ręcznie, koszt,
+oczekujące scalenia, niewypełnione placeholdery. Wszystkie otwarte pytania
+trafiają do właściciela w jednej wiadomości na starcie (najwyżej 4, każde z
+rekomendowanym domyślnym wyborem).
+
+### Tryb przeglądu: `pr` albo `gate`
+
+Po klasyfikacji orchestrator wybiera, kto robi przegląd, zanim powstanie pull
+request, zapisuje to jako `task.review_mode` z uzasadnieniem i informuje Cię
+jedną linią. Twoja wiadomość z nazwą trybu wygrywa („otwórz PR od razu” to
+`pr`, „pokaż mi najpierw” to `gate`).
+
+| Tryb | Punkt przeglądu | Publisher |
+|---|---|---|
+| `pr` (domyślny) | sam pull request; Ty go sprawdzasz i scalasz | uruchamiany automatycznie, gdy warunki są spełnione |
+| `gate` | przebieg zatrzymuje się na bramce z raportem | dopiero po Twojej zapisanej akceptacji |
+
+Orchestrator wybiera `gate`, gdy o to prosisz albo gdy zmiana edytuje AGENTS.md
+lub odwraca zapisaną decyzję, dotyka wdrożeń, infrastruktury, poświadczeń lub
+kodu istotnego dla bezpieczeństwa, migruje lub usuwa dane, ma skutek kosztowy
+albo nowego dostawcę, publikuje gdziekolwiek poza pull requestem, który można
+zamknąć (zawsze `gate`), albo zakres jest niejednoznaczny. W trakcie
+przebiegu tryb może się tylko zaostrzyć, z `pr` do `gate`; wrócić może tylko
+człowiek.
 
 Zaakceptowany design nie uruchamia sam pipeline'u dev. Orchestrator proponuje
 to na bramce i startuje nowy przebieg dopiero po Twojej zgodzie, z designem
@@ -91,7 +119,7 @@ jako wejściem.
 
 ### Dokumentacja idzie razem ze zmianą
 
-Zmiana nie trafia na bramkę, dopóki dokumentacja opisuje stare zachowanie. W
+Zmiana nie trafia na bramkę ani do pull requesta, dopóki dokumentacja opisuje stare zachowanie. W
 pipeline dev, po czystych testach i przeglądach, orchestrator uruchamia
 `docs-writer` w trybie `sync` z diffem i specyfikacją. Agent szuka miejsc w
 dokumentacji, które zmiana czyni nieaktualnymi (README, katalog docs, notatki
@@ -149,8 +177,22 @@ Wzorowany na Superpowers (subagent-driven-development):
   Synchronizacja dokumentacji działa po recenzjach: brak aktualizacji
   dokumentów nie jest uwagą, chyba że diff błędnie zmienia udokumentowane
   zachowanie lub zostawia sprzeczne dokumenty.
-- **Agenci bez narzędzia zapisu** zwracają raport w końcowej wiadomości;
-  orchestrator zapisuje go w `runs/<run-id>/<stage>.md`.
+- **Pliki wyników.** Analyst, architect i spec-reviewer zapisują własny
+  `runs/<run-id>/<stage>.md` (jedyny plik, który mogą zapisać) i zwracają
+  ścieżkę z krótkim podsumowaniem; orchestrator czyta go z powrotem. Agenci
+  bez narzędzia zapisu (recenzenci, brief-writer, copywriter) zwracają pełny
+  raport w końcowej wiadomości, a orchestrator zapisuje go dosłownie.
+- **Wymagania właściciela są śledzone.** Brief podaje je dosłownie jako
+  R1..Rn. Analyst zaczyna wynik tabelą R → AC, a spec-reviewer zwraca spec, w
+  której jakieś R nie ma AC.
+- **Fakty pochodzą z plików.** Liczby, numery linii i wersje w briefie lub
+  raporcie pochodzą z komendy albo pliku odczytanego w tej turze, nie z pamięci.
+- **Agenci bez powłoki** (analyst, architect, spec-reviewer, docs-writer,
+  recenzenci) nie zweryfikują komend; orchestrator daje im fakty i sprawdza ich
+  diffy przez `git diff`.
+- **CI wchodzi w „zielone”.** Tester czyta, co uruchamia CI, i wykonuje każdy
+  krok albo zgłasza `NOT RUN` z powodem; liczby testów obejmują passed, failed
+  i skipped, każdy pominięty z wyjaśnieniem.
 - **Produkty zewnętrzne** opisuje się ogólnie, chyba że zweryfikowano je w
   sesji.
 - **Zrzuty ekranu** zmian w UI trafiają tylko do opisu pull requesta;
@@ -165,7 +207,10 @@ orchestrator; wyniki etapów trafiają do `runs/<run-id>/<etap>.md`. Pełny
 schemat jest w [wersji angielskiej](ORCHESTRATION.md#5-state-and-gate) i w
 pliku `agents/orchestrator.agent.md`.
 
-Bramka jest przed publikacją w każdym pipeline:
+W trybie gate bramka jest przed publikacją, w każdym pipeline. W trybie `pr`
+te same warunki (wszystkie AC `pass` z dowodem, brak otwartego ustalenia
+blokującego, zielony pełny przebieg testów, zsynchronizowana dokumentacja, brak
+sekretu w diffie, żaden licznik nie wyczerpany) od razu uruchamiają publishera.
 
 | Decyzja | Skutek |
 |---|---|
@@ -173,8 +218,29 @@ Bramka jest przed publikacją w każdym pipeline:
 | Odrzuć z uwagą | orchestrator wybiera etap i ponawia |
 | Drobna zmiana | wraca do autora na liczniku `code` lub `revision` |
 
-Publisher sam czyta `state.json` i bez wpisu akceptacji zwraca `BLOCKED`. Nie
+W trybie gate publisher sam czyta `state.json` i bez wpisu akceptacji zwraca
+`BLOCKED`. Nie
 pushuje na gałąź domyślną, nie robi force-push, nie scala PR.
+
+Gdy pull request jest otwarty, orchestrator od razu zapisuje rekord przebiegu i
+robi retrospektywę (wynik `pr_open`). Gdy zgłosisz scalenie, zapisuje `merged` i
+jedną linią mówi, które scalone gałęzie czekają na usunięcie; sprzątanie
+gałęzi nie należy do publishera.
+
+### Rozmowa z właścicielem
+
+Wiadomości są krótkie: najpierw wynik albo jedyna potrzebna rzecz, najwyżej
+ok. 10 linii, szczegóły w plikach `runs/` i w opisie pull requesta.
+Orchestrator pyta tylko o to, co blokuje postęp lub zmienia kryterium
+akceptacji; w pozostałych przypadkach bierze rozsądną wartość domyślną,
+zapisuje ją w `decisions` i wspomina o tym jedną linią. Pytania etapu łączy w
+jedną wiadomość, najwyżej 3, każde z opcjami i rekomendowanym wyborem.
+
+Pytania bez odpowiedzi są w `state.json` (`open_questions`) i w
+`runs/<run-id>/open-questions.md`. Dopóki któreś jest otwarte, każda
+wiadomość kończy się blokiem `Waiting for you: Q1 … (default: …)`, podanym w
+całości, żeby wynik z tła nie zepchnął go z widoku. Praca niezależna od
+odpowiedzi trwa dalej.
 
 ## 6. Skille
 
@@ -366,5 +432,7 @@ proponuje instalację hooków.
 | `tester` ma `Edit`/`Write` | pisze brakujące testy per AC; tylko pliki testów |
 | Licznik `revision` | poprawki content, docs i design nie są błędem kodu |
 | `docs-writer` ma `Edit`/`Write` i etap `sync` w dev | dokumentacja ma się aktualizować razem ze zmianą; tylko pliki dokumentacji |
+| `pr` jako domyślny tryb przeglądu | pull request już jest punktem przeglądu; bramka zostaje dla zmian trudnych do cofnięcia przez zamknięcie PR |
+| `analyst`, `architect`, `spec-reviewer` mają `Write` | długie wyniki nie obciążają kontekstu orchestratora; każdy zapisuje jeden własny plik wyniku w `runs/` |
 | Zapis przebiegu w `memory/` | dokument na przyszłość po każdym przebiegu, niezależny od hosta |
 | Brak stacku w agentach | wiedza o projekcie należy do skilla `stack-and-style` |

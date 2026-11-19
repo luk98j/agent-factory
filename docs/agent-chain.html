@@ -177,6 +177,8 @@
 
   <h2 data-i18n="hShared"></h2>
   <div class="cards">
+    <div class="card"><h3 data-i18n="cModeT"></h3><p data-i18n="cMode"></p></div>
+    <div class="card"><h3 data-i18n="cTalkT"></h3><p data-i18n="cTalk"></p></div>
     <div class="card"><h3 data-i18n="cStateT"></h3><p data-i18n="cState"></p></div>
     <div class="card"><h3 data-i18n="cMemT"></h3><p data-i18n="cMem"></p></div>
     <div class="card"><h3 data-i18n="cDocsT"></h3><p data-i18n="cDocs"></p></div>
@@ -196,12 +198,12 @@
 const TEXT = {
   en: {
     title: "Agent chain",
-    lead: "One orchestrator, four pipelines, one human gate before anything is published. Click an agent to see its role, tools and skills.",
+    lead: "One orchestrator, four pipelines. The pull request is the review point by default; a human gate comes before publication when the change is hard to undo. Click an agent to see its role, tools and skills.",
     task: "Task", classifies: "classifies and picks a pipeline",
     whenDev: "a code change", whenContent: "text for an audience", whenDocs: "describing what exists",
     whenDesign: "\"design\", mockup, UI/UX, redesign, <code>/design</code>",
     parallel: "in parallel", parallelPlatform: "in parallel, per platform",
-    gate: "gate", humanGate: "human gate", accept: "→ accept →", published: "branch, commit, pull request",
+    gate: "gate (gate mode)", humanGate: "human gate (gate mode only)", accept: "→ accept →", published: "branch, commit, pull request",
     architectReview: "architect · review",
     loopBlocking: "↩ blocking review → developer · <code>code</code> ≤ 3",
     loopEnv: "↻ environment error · max 2 retries",
@@ -213,9 +215,13 @@ const TEXT = {
     cStateT: "State: state.json",
     cState: "<code>runs/&lt;run-id&gt;/state.json</code> is the single source of truth. Only the orchestrator writes it; agents return their result in the final message.",
     cMemT: "Memory",
-    cMem: "After every run the orchestrator writes what was learned to <code>memory/runs/&lt;run-id&gt;.md</code> and the index <code>memory/INDEX.md</code>, and reads matching records at the start. claude-mem adds search across sessions. Memory advises, state decides.",
+    cMem: "After every run the orchestrator writes what was learned to <code>memory/runs/&lt;run-id&gt;.md</code> and the index <code>memory/INDEX.md</code>, and reads matching records at the start. claude-mem adds search across sessions, and the Mem0 MCP server (<code>mcp__mem0__*</code>, no delete) is shared by every agent; the orchestrator probes it at run start. Memory advises, state decides.",
     cDocsT: "Docs move with the change",
     cDocs: "Before the gate, docs-writer in sync mode updates the documents a code change makes outdated. They ship in the same pull request.",
+    cModeT: "Review mode: pr or gate",
+    cMode: "Default <code>pr</code>: the pull request is the review point and the publisher runs automatically. <code>gate</code> when you ask, or when the change is hard to undo by closing a PR (owner agreements, deployment, credentials, data, cost, publishing outside a PR). The mode only escalates.",
+    cTalkT: "Talking to the owner",
+    cTalk: "Short messages, at most 3 merged questions with a recommended default. Every unanswered question stays in <code>state.json</code> and ends each message as <code>Waiting for you</code>.",
     cMonT: "Observation: Agent Monitor",
     cMon: "Reads sessions through host hooks. Every dispatch is named <code>[run-id] agent #attempt</code>, so the run tree is readable. Supports Claude Code, not Copilot.",
     cRulesT: "Working rules",
@@ -225,12 +231,12 @@ const TEXT = {
   },
   pl: {
     title: "Łańcuch agentów",
-    lead: "Jeden orchestrator, cztery pipeline'y, jedna bramka człowieka przed publikacją. Kliknij agenta, żeby zobaczyć jego rolę, narzędzia i skille.",
+    lead: "Jeden orchestrator, cztery pipeline'y. Domyślnie punktem przeglądu jest pull request; bramka człowieka stoi przed publikacją, gdy zmiana jest trudna do cofnięcia. Kliknij agenta, żeby zobaczyć jego rolę, narzędzia i skille.",
     task: "Zadanie", classifies: "klasyfikuje i wybiera pipeline",
     whenDev: "zmiana kodu", whenContent: "tekst dla odbiorców", whenDocs: "opis istniejącego",
     whenDesign: "„design\", makieta, UI/UX, redesign, <code>/design</code>",
     parallel: "równolegle", parallelPlatform: "równolegle, per platforma",
-    gate: "bramka", humanGate: "bramka człowieka", accept: "→ akceptuj →", published: "gałąź, commit, pull request",
+    gate: "bramka (tryb gate)", humanGate: "bramka człowieka (tylko tryb gate)", accept: "→ akceptuj →", published: "gałąź, commit, pull request",
     architectReview: "architect · recenzja",
     loopBlocking: "↩ przegląd blokujący → developer · <code>code</code> ≤ 3",
     loopEnv: "↻ błąd środowiska · max 2 ponowienia",
@@ -242,9 +248,13 @@ const TEXT = {
     cStateT: "Stan: state.json",
     cState: "<code>runs/&lt;run-id&gt;/state.json</code> to jedyne źródło prawdy. Zapisuje tylko orchestrator; agenci zwracają wynik w ostatniej wiadomości.",
     cMemT: "Pamięć",
-    cMem: "Po każdym przebiegu orchestrator zapisuje wnioski do <code>memory/runs/&lt;run-id&gt;.md</code> i indeksu <code>memory/INDEX.md</code>, a na starcie czyta pasujące zapisy. claude-mem dodaje wyszukiwanie między sesjami. Pamięć doradza, stan rozstrzyga.",
+    cMem: "Po każdym przebiegu orchestrator zapisuje wnioski do <code>memory/runs/&lt;run-id&gt;.md</code> i indeksu <code>memory/INDEX.md</code>, a na starcie czyta pasujące zapisy. claude-mem dodaje wyszukiwanie między sesjami, a serwer MCP Mem0 (<code>mcp__mem0__*</code>, bez usuwania) współdzielą wszyscy agenci; orchestrator sprawdza go na starcie przebiegu. Pamięć doradza, stan rozstrzyga.",
     cDocsT: "Dokumentacja idzie ze zmianą",
     cDocs: "Przed bramką docs-writer w trybie sync aktualizuje dokumenty, które zmiana kodu czyni nieaktualnymi. Trafiają do tego samego pull requesta.",
+    cModeT: "Tryb przeglądu: pr lub gate",
+    cMode: "Domyślnie <code>pr</code>: punktem przeglądu jest pull request, a publisher działa automatycznie. <code>gate</code> na Twoją prośbę albo gdy zmianę trudno cofnąć przez zamknięcie PR (umowy właściciela, wdrożenia, poświadczenia, dane, koszty, publikacja poza PR). Tryb może się tylko zaostrzyć.",
+    cTalkT: "Rozmowa z właścicielem",
+    cTalk: "Krótkie wiadomości, najwyżej 3 połączone pytania z rekomendowanym wyborem. Każde pytanie bez odpowiedzi zostaje w <code>state.json</code> i kończy każdą wiadomość jako <code>Waiting for you</code>.",
     cMonT: "Podgląd: Agent Monitor",
     cMon: "Czyta sesje przez hooki hosta. Każde wywołanie ma nazwę <code>[run-id] agent #próba</code>, więc drzewo przebiegu jest czytelne. Obsługuje Claude Code, nie Copilota.",
     cRulesT: "Zasady pracy",
@@ -255,6 +265,8 @@ const TEXT = {
 };
 
 const READ = ["Read", "Grep", "Glob", "Skill"];
+const READ_RESULT = ["Read", "Grep", "Glob", "Write", "Skill"];
+const RESULT_FILE = { en: "its own result file in runs/<run-id>/", pl: "własny plik wyniku w runs/<run-id>/" };
 const ALL = { en: "all", pl: "wszystkie" };
 const NOTHING = { en: "nothing", pl: "nic" };
 
@@ -268,15 +280,15 @@ const AGENTS = {
   analyst: {
     role: { en: "Turns a request into requirements and testable acceptance criteria.",
             pl: "Zamienia prośbę w wymagania i testowalne kryteria akceptacji." },
-    pipes: "dev, design", tools: READ, writes: NOTHING, skills: ["ac-format", "karpathy-guidelines", "brainstorming"] },
+    pipes: "dev, design", tools: READ_RESULT, writes: RESULT_FILE, skills: ["ac-format", "karpathy-guidelines", "brainstorming"] },
   "spec-reviewer": {
     role: { en: "Approves the specification or returns it to the analyst with questions.",
             pl: "Zatwierdza specyfikację albo zwraca ją analitykowi z pytaniami." },
-    pipes: "dev", tools: READ, writes: NOTHING, skills: ["spec-checklist", "karpathy-guidelines"] },
+    pipes: "dev", tools: READ_RESULT, writes: RESULT_FILE, skills: ["spec-checklist", "karpathy-guidelines"] },
   architect: {
     role: { en: "Technical design and a plan in small tasks (dev). Checks a document against the code (docs).",
             pl: "Projekt techniczny i plan w małych zadaniach (dev). Recenzja zgodności dokumentu z kodem (docs)." },
-    pipes: "dev, docs", tools: READ, writes: NOTHING,
+    pipes: "dev, docs", tools: READ_RESULT, writes: RESULT_FILE,
     skills: ["architecture-patterns", "stack-and-style", "karpathy-guidelines", "writing-plans", "ponytail"] },
   developer: {
     role: { en: "Implements the plan test-first with the smallest complete change. The only agent that edits product code.",
@@ -324,14 +336,14 @@ const AGENTS = {
     writes: { en: "documentation files only", pl: "tylko pliki dokumentacji" },
     skills: ["docs-template", "doc-coauthoring", "stack-and-style"] },
   publisher: {
-    role: { en: "After a recorded human accept: branch, commit, pull request. Never to the default branch.",
-            pl: "Po zapisanej akceptacji człowieka: gałąź, commit, pull request. Nigdy na gałąź domyślną." },
+    role: { en: "Branch, commit, pull request; in gate mode only after a recorded human accept. Never to the default branch.",
+            pl: "Gałąź, commit, pull request; w trybie gate dopiero po zapisanej akceptacji człowieka. Nigdy na gałąź domyślną." },
     pipes: ALL, tools: ["Read", "Grep", "Glob", "Bash", "Skill"],
     writes: { en: "git: branch, commit, pull request", pl: "git: gałąź, commit, pull request" },
     skills: ["commit-conventions", "pr-template", "finishing-a-development-branch"] },
   gate: {
-    role: { en: "Not an agent. The orchestrator stops the run (waiting_human) and shows: summary, criteria status, tests, findings, diff. Decisions: accept, reject with a note, minor change.",
-            pl: "To nie agent. Orchestrator zatrzymuje przebieg (waiting_human) i pokazuje: podsumowanie, status AC, testy, ustalenia, diff. Decyzje: akceptuj, odrzuć z uwagą, drobna zmiana." },
+    role: { en: "Not an agent, and only in gate mode. The orchestrator stops the run (waiting_human) and shows: summary, criteria status, tests, findings, diff. Decisions: accept, reject with a note, minor change.",
+            pl: "To nie agent i działa tylko w trybie gate. Orchestrator zatrzymuje przebieg (waiting_human) i pokazuje: podsumowanie, status AC, testy, ustalenia, diff. Decyzje: akceptuj, odrzuć z uwagą, drobna zmiana." },
     pipes: ALL, tools: [],
     writes: { en: "the orchestrator records the decision in decisions", pl: "decyzję do decisions zapisuje orchestrator" },
     skills: [] }
