@@ -10,10 +10,10 @@ Ponytail, the Karpathy guidelines and the monitor fit in. Visual version:
 
 | Agent | Pipeline | Role | Tools | Writes |
 |---|---|---|---|---|
-| `orchestrator` | all | classifies, plans, delegates, counts attempts, keeps state and memory, stops at the gate | all (inherited) | `runs/` and `memory/` only |
-| `analyst` | dev, design | requirements and acceptance criteria | Read, Grep, Glob, Skill | nothing |
-| `spec-reviewer` | dev | approves the spec or returns it with questions | Read, Grep, Glob, Skill | nothing |
-| `architect` | dev, docs | technical design and plan; documentation review | Read, Grep, Glob, Skill | nothing |
+| `orchestrator` | all | classifies, plans, delegates, counts attempts, keeps state and memory, picks the review mode, stops at the gate (gate mode) and for escalations | all (inherited) | `runs/` and `memory/` only |
+| `analyst` | dev, design | requirements and acceptance criteria | Read, Grep, Glob, Write, Skill | its result file `runs/<id>/analyst.md` |
+| `spec-reviewer` | dev | approves the spec or returns it with questions | Read, Grep, Glob, Write, Skill | its result file `runs/<id>/spec-review.md` |
+| `architect` | dev, docs | technical design and plan; documentation review | Read, Grep, Glob, Write, Skill | its result file `runs/<id>/architect.md` |
 | `developer` | dev | code, test-first; fixes | Read, Grep, Glob, Edit, Write, Bash, Skill | code |
 | `tester` | dev | verification per acceptance criterion, with evidence | Read, Grep, Glob, Bash, Edit, Write, Skill | test files only |
 | `review-security` | dev | security review | Read, Grep, Glob, Skill | nothing |
@@ -23,7 +23,7 @@ Ponytail, the Karpathy guidelines and the monitor fit in. Visual version:
 | `brief-writer` | content | brief: goal, audience, message | Read, Grep, Glob, Skill | nothing |
 | `copywriter` | content | master text and per-platform adaptations | Read, Grep, Glob, Skill | nothing |
 | `docs-writer` | docs, dev | new document (docs); documentation update after a change (dev, `sync` mode) | Read, Grep, Glob, Edit, Write, Skill | documentation only |
-| `publisher` | all | branch, commit, pull request after acceptance | Read, Grep, Glob, Bash, Skill | git |
+| `publisher` | all | branch, commit, pull request (after a recorded accept in gate mode) | Read, Grep, Glob, Bash, Skill | git |
 
 ## 2. Universal format
 
@@ -73,20 +73,46 @@ flowchart LR
   U([Task]) --> O{{orchestrator}}
   O -->|dev| A1[analyst] --> SR[spec-reviewer] --> AR[architect] --> D[developer] --> T[tester]
   T --> RS[review-security] & RP[review-performance] & RY[review-style]
-  RS & RP & RY --> DSY[docs-writer: sync] --> G{Human gate}
+  RS & RP & RY --> DSY[docs-writer: sync] --> G{Human gate: gate mode only}
   O -->|content| BW[brief-writer] --> CW[copywriter] --> CA[copywriter × platform] --> G
   O -->|docs| DW[docs-writer] --> AD[architect: review] --> G
   O -->|design| A2[analyst] --> DS[designer] --> G
   G -->|accept| P[publisher] --> PR([Pull request])
+  DSY & CA & AD & DS -.->|pr mode: no gate| P
   G -.->|reject with a note| O
 ```
 
 | Pipeline | When | Stages |
 |---|---|---|
-| dev | a code change | analyst → spec-reviewer → architect → developer → tester → 3 reviews in parallel → docs-writer (sync) → gate → publisher |
-| content | text for an audience | brief-writer → copywriter → copywriter per platform (parallel) → gate → publisher |
-| docs | describing what exists | docs-writer → architect (review) → gate → publisher |
-| design | "design", mockup, wireframe, UI/UX, redesign, `/design` | analyst → designer → gate → publisher |
+| dev | a code change | analyst → spec-reviewer → architect → developer → tester → 3 reviews in parallel → docs-writer (sync) → [gate] → publisher |
+| content | text for an audience | brief-writer → copywriter → copywriter per platform (parallel) → [gate] → publisher |
+| docs | describing what exists | docs-writer → architect (review) → [gate] → publisher |
+| design | "design", mockup, wireframe, UI/UX, redesign, `/design` | analyst → designer → [gate] → publisher |
+
+`[gate]` exists in gate mode only, see below. A request is first checked by
+the "Before the analyst" list of `task-classification`: what already exists
+outside the repository, what the owner must do by hand, cost, pending merges,
+unfilled placeholders. All open owner questions go out in one message at the
+start (at most 4, each with a recommended default).
+
+### Review mode: `pr` or `gate`
+
+After classifying, the orchestrator picks who reviews before the pull request
+exists, records it as `task.review_mode` with a reason and tells you in one
+line. Your message naming the mode wins ("open the PR right away" is `pr`,
+"show me first" is `gate`).
+
+| Mode | Review point | Publisher |
+|---|---|---|
+| `pr` (default) | the pull request itself; you review and merge it | dispatched automatically once the conditions hold |
+| `gate` | the run stops at the gate with a report | only after your recorded accept |
+
+The orchestrator chooses `gate` when you ask for it, or when the change edits
+AGENTS.md or reverses a recorded decision, touches deployment, infrastructure,
+credentials or security-relevant code, migrates or deletes data, has a cost
+or new-provider effect, publishes anywhere other than a pull request that can
+be closed (always `gate`), or the scope is ambiguous. The mode can only
+escalate during a run, from `pr` to `gate`; only you can switch back.
 
 An accepted design does not start a dev run on its own. The orchestrator
 offers it at the gate and starts a new run only after you agree, with the
@@ -94,7 +120,7 @@ design as input.
 
 ### Documentation moves with the change
 
-A change does not reach the gate while the documentation still describes the
+A change does not reach the gate or the pull request while the documentation still describes the
 old behavior. In the dev pipeline, once tests and reviews are clean, the
 orchestrator dispatches `docs-writer` in `sync` mode with the diff and the
 spec. The agent looks for the places the change makes outdated (README files,
@@ -154,8 +180,22 @@ Modeled on Superpowers (subagent-driven development):
   read-only; the developer makes the fixes. Docs sync runs after the reviews:
   missing doc updates are not a finding unless the diff changes documented
   behavior incorrectly or leaves contradicting docs.
-- **Agents without a write tool** return the report in the final message; the
-  orchestrator saves it to `runs/<run-id>/<stage>.md`.
+- **Result files.** The analyst, architect and spec-reviewer write their own
+  `runs/<run-id>/<stage>.md` (the only file they may write) and return the
+  path with a short summary; the orchestrator reads it back. Agents without a
+  write tool (reviewers, brief-writer, copywriter) return the full report in
+  the final message and the orchestrator saves it verbatim.
+- **Owner requirements are traceable.** The brief lists them as R1..Rn,
+  quoted verbatim. The analyst opens its result with an R → AC table and the
+  spec-reviewer returns a spec in which any R has no AC.
+- **Facts come from files.** Counts, line numbers and versions in a brief or
+  report come from a command or file read in that turn, not from memory.
+- **Agents without a shell** (analyst, architect, spec-reviewer, docs-writer,
+  reviewers) cannot verify commands; the orchestrator briefs them with facts
+  and checks their diffs with `git diff`.
+- **CI is part of "green".** The tester reads what CI runs and runs every
+  step, or reports it `NOT RUN` with the reason; test counts list passed,
+  failed and skipped, each skip explained.
 - **Third-party products** are described generically unless verified in the
   session.
 - **Screenshots** of UI changes go only into the pull request description; the
@@ -171,18 +211,23 @@ orchestrator writes it; stage results go to `runs/<run-id>/<stage>.md`.
 ```json
 {
   "run_id": "2026-11-12-001",
-  "task": { "type": "dev | content | docs | design", "brief": "…" },
+  "task": { "type": "dev | content | docs | design", "brief": "…",
+            "review_mode": "pr | gate", "review_mode_reason": "…" },
   "acceptance_criteria": [ { "id": "AC-1", "text": "…", "status": "pending | pass | fail" } ],
   "stages": [ { "id": "…", "agent": "…", "status": "pending | in_progress | ok | error | waiting_human",
                 "attempt": 1, "max_attempts": 3, "started_at": "…", "finished_at": "…", "result_ref": "…" } ],
   "counters": { "spec": 0, "code": 0, "revision": 0 },
   "findings": [ { "source": "…", "severity": "blocking | warning", "text": "…" } ],
   "decisions": [ { "at": "…", "by": "human | orchestrator", "text": "…" } ],
+  "open_questions": [ { "id": "Q1", "text": "…", "default": "…", "asked_at": "…" } ],
   "trace": [ { "at": "…", "stage": "…", "event": "…", "cost_tokens": 0 } ]
 }
 ```
 
-The gate comes before publication in every pipeline:
+In gate mode the gate comes before publication, in every pipeline. In `pr`
+mode the same conditions (all criteria `pass` with evidence, no blocking
+finding, green full run, docs synced, no secret in the diff, no exhausted
+counter) trigger the publisher directly.
 
 | Decision | Effect |
 |---|---|
@@ -196,9 +241,29 @@ implementation starts from the latest default branch. It stops and asks if the
 working tree has changes it cannot account for. The publisher reuses that
 branch.
 
-The publisher reads `state.json` itself and returns `BLOCKED` without an
-acceptance entry. It never pushes to the default branch, never force-pushes
+In gate mode the publisher reads `state.json` itself and returns `BLOCKED`
+without an acceptance entry. It never pushes to the default branch, never force-pushes
 and never merges the pull request.
+
+When the pull request is open, the orchestrator writes the run record and runs
+the retrospective at once (outcome `pr_open`). When you report it merged, it
+records `merged` and tells you in one line which merged branches are due for
+deletion; branch cleanup is not the publisher's job.
+
+### Talking to the owner
+
+Messages are short: the result or the one thing needed first, at most about 10
+lines, details in `runs/` files and the pull request description. The
+orchestrator asks only what blocks progress or changes an acceptance
+criterion; otherwise it takes a sensible default, records it in `decisions`
+and says so in one line. Questions of a stage are merged into one message, at
+most 3, each with options and a recommended default.
+
+Unanswered questions are kept in `state.json` (`open_questions`) and in
+`runs/<run-id>/open-questions.md`. While any is open, every message ends with
+`Waiting for you: Q1 … (default: …)`, restated in full, so a background result
+cannot push it out of sight. Work that does not depend on the answer keeps
+running.
 
 ## 6. Skills
 
@@ -413,5 +478,7 @@ first launch.
 | `tester` has `Edit` and `Write` | it writes missing tests per criterion; test files only |
 | `docs-writer` has `Edit` and `Write`, and a `sync` stage in dev | documentation has to change together with the code; documentation files only |
 | A `revision` counter | rework of content, docs and design is not a code error |
+| `pr` as the default review mode | the pull request is already a review point; the gate stays for changes that are hard to undo by closing it |
+| `analyst`, `architect`, `spec-reviewer` have `Write` | long results stay out of the orchestrator's context; each may write its one result file under `runs/` |
 | Run records in `memory/` | a document for the future after every run, on any host |
 | No stack in the agents | project knowledge belongs in the `stack-and-style` skill |
